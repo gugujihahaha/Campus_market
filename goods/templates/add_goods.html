@@ -1,9 +1,168 @@
-<h2>发布商品</h2>
+{% extends 'base.html' %}
 
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    
-    {{ form.as_p }}
-    
-    <button type="submit">发布</button>
-</form>
+{% block title %}发布商品 - 校园二手{% endblock %}
+
+{% block content %}
+
+<div class="max-w-2xl mx-auto">
+
+    <!-- ==================== 页面标题 ==================== -->
+    <div class="mb-8 text-center">
+        <h1 class="text-2xl lg:text-3xl font-extrabold text-gray-900">发布闲置</h1>
+        <p class="mt-2 text-sm text-gray-500">填写信息，让你的好物找到新主人 ✨</p>
+    </div>
+
+    <!-- ==================== 表单卡片 ==================== -->
+    <div class="bg-white rounded-3xl shadow-sm ring-1 ring-gray-100 p-6 sm:p-8 lg:p-10">
+
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+
+            <!-- ===== 错误摘要（非字段错误） ===== -->
+            {% if form.non_field_errors %}
+                <div class="mb-6 p-4 rounded-2xl bg-red-50 border border-red-100">
+                    {% for error in form.non_field_errors %}
+                        <p class="text-sm text-red-600 flex items-center gap-2">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            {{ error }}
+                        </p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- ===== 标题 ===== -->
+            <div class="mb-5">
+                <label for="{{ form.title.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-1.5">
+                    商品标题 <span class="text-red-400">*</span>
+                </label>
+                <input type="text"
+                       name="{{ form.title.name }}"
+                       id="{{ form.title.id_for_label }}"
+                       value="{{ form.title.value|default:'' }}"
+                       placeholder="例如：iPhone 15 Pro 256G 99新"
+                       class="w-full px-4 py-3 text-sm text-gray-900 bg-gray-50 border {% if form.title.errors %}border-red-300 focus:ring-red-400{% else %}border-gray-200 focus:ring-emerald-400{% endif %} rounded-xl focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 placeholder:text-gray-300">
+                {% if form.title.errors %}
+                    <p class="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        {{ form.title.errors.0 }}
+                    </p>
+                {% endif %}
+            </div>
+
+            <!-- ===== 价格 ===== -->
+            <div class="mb-5">
+                <label for="{{ form.price.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-1.5">
+                    价格 (¥) <span class="text-red-400">*</span>
+                </label>
+                <div class="relative">
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">¥</span>
+                    <input type="number"
+                           name="{{ form.price.name }}"
+                           id="{{ form.price.id_for_label }}"
+                           value="{{ form.price.value|default:'' }}"
+                           step="0.01"
+                           min="0"
+                           placeholder="0.00"
+                           class="w-full pl-9 pr-4 py-3 text-sm text-gray-900 bg-gray-50 border {% if form.price.errors %}border-red-300 focus:ring-red-400{% else %}border-gray-200 focus:ring-emerald-400{% endif %} rounded-xl focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 placeholder:text-gray-300">
+                </div>
+                {% if form.price.errors %}
+                    <p class="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        {{ form.price.errors.0 }}
+                    </p>
+                {% endif %}
+            </div>
+
+            <!-- ===== 分类 ===== -->
+            <div class="mb-5">
+                <label for="{{ form.category.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-1.5">
+                    商品分类
+                </label>
+                <select name="{{ form.category.name }}"
+                        id="{{ form.category.id_for_label }}"
+                        class="w-full px-4 py-3 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-200 appearance-none cursor-pointer"
+                        style="background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22 fill=%22none%22 stroke=%22%239ca3af%22 stroke-width=%222%22%3E%3Cpath d=%22m6 9 6 6 6-6%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 12px center; background-size: 20px;">
+                    <option value="">-- 请选择分类 --</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if form.category.value|stringformat:'s' == cat.id|stringformat:'s' %}selected{% endif %}>
+                            {{ cat.icon }} {{ cat.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- ===== 图片上传 ===== -->
+            <div class="mb-5">
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+                    商品图片
+                </label>
+                <!-- 虚线拖拽上传区 -->
+                <label for="{{ form.image.id_for_label }}"
+                       class="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed {% if form.image.errors %}border-red-300 bg-red-50/30{% else %}border-gray-200 bg-gray-50/50 hover:border-emerald-300 hover:bg-emerald-50/30{% endif %} rounded-2xl cursor-pointer transition-all duration-300 group">
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="w-12 h-12 rounded-full bg-gray-100 group-hover:bg-emerald-100 flex items-center justify-center transition-colors duration-300">
+                            <svg class="w-6 h-6 text-gray-400 group-hover:text-emerald-500 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                        </div>
+                        <p class="text-sm text-gray-400 group-hover:text-gray-500 transition-colors">
+                            <span class="font-medium text-gray-500 group-hover:text-emerald-600 transition-colors">点击上传</span> 或拖拽图片到此处
+                        </p>
+                        <p class="text-xs text-gray-300">支持 JPG / PNG / WebP</p>
+                    </div>
+                    <input type="file"
+                           name="{{ form.image.name }}"
+                           id="{{ form.image.id_for_label }}"
+                           accept="image/*"
+                           class="hidden">
+                </label>
+                {% if form.image.errors %}
+                    <p class="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        {{ form.image.errors.0 }}
+                    </p>
+                {% endif %}
+            </div>
+
+            <!-- ===== 描述 ===== -->
+            <div class="mb-6">
+                <label for="{{ form.description.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-1.5">
+                    商品描述 <span class="text-red-400">*</span>
+                </label>
+                <textarea name="{{ form.description.name }}"
+                          id="{{ form.description.id_for_label }}"
+                          rows="5"
+                          placeholder="描述一下商品的成色、购买时间、使用情况等……"
+                          class="w-full px-4 py-3 text-sm text-gray-900 bg-gray-50 border {% if form.description.errors %}border-red-300 focus:ring-red-400{% else %}border-gray-200 focus:ring-emerald-400{% endif %} rounded-xl focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 placeholder:text-gray-300 resize-none">{{ form.description.value|default:'' }}</textarea>
+                {% if form.description.errors %}
+                    <p class="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        {{ form.description.errors.0 }}
+                    </p>
+                {% endif %}
+            </div>
+
+            <!-- ===== 提交按钮 ===== -->
+            <button type="submit"
+                    class="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold text-white bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl hover:from-gray-800 hover:to-gray-700 hover:shadow-lg hover:shadow-gray-900/20 transition-all duration-300 shadow-md">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                确认发布商品
+            </button>
+
+        </form>
+    </div>
+</div>
+
+{% endblock %}

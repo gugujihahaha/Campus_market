@@ -1,21 +1,222 @@
 {% extends 'base.html' %}
 
+{% block title %}{{ goods.title }} - 校园二手{% endblock %}
+
 {% block content %}
 
-<div class="card">
+<div class="max-w-6xl mx-auto">
+    <!-- ==================== 面包屑 ==================== -->
+    <nav class="flex items-center gap-2 text-sm text-gray-400 mb-6">
+        <a href="/goods/" class="hover:text-gray-600 transition-colors">首页</a>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        {% if goods.category %}
+            <a href="/goods/?category={{ goods.category.id }}" class="hover:text-gray-600 transition-colors">{{ goods.category.icon }} {{ goods.category.name }}</a>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+        {% endif %}
+        <span class="text-gray-600 truncate">{{ goods.title }}</span>
+    </nav>
 
-    {% if goods.image %}
-        <img src="{{ goods.image.url }}" class="card-img-top" style="max-height:400px;object-fit:cover;">
-    {% endif %}
+    <!-- ==================== 左右分栏主体 ==================== -->
+    <div class="grid md:grid-cols-2 gap-8 lg:gap-12">
 
-    <div class="card-body">
-        <h3>{{ goods.title }}</h3>
-        <h4 class="text-danger">￥{{ goods.price }}</h4>
+        <!-- ========== 左侧：图片区 ========== -->
+        <div>
+            {% if goods.image %}
+                <div class="relative rounded-3xl overflow-hidden shadow-lg shadow-gray-200/50 ring-1 ring-gray-100 bg-white">
+                    <img src="{{ goods.image.url }}"
+                         alt="{{ goods.title }}"
+                         class="w-full aspect-square object-cover">
+                </div>
+            {% else %}
+                <div class="rounded-3xl aspect-square bg-gradient-to-br from-gray-50 to-gray-100 shadow-lg shadow-gray-200/50 ring-1 ring-gray-100 flex items-center justify-center">
+                    <div class="text-center text-gray-300">
+                        <svg class="w-24 h-24 mx-auto mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        <p class="text-sm">暂无图片</p>
+                    </div>
+                </div>
+            {% endif %}
 
-        <p>{{ goods.description }}</p>
-        <p class="text-muted">发布者：{{ goods.user.username }}</p>
+            <!-- 缩略图/底部提示 -->
+            <div class="mt-4 flex items-center justify-between text-xs text-gray-400 px-2">
+                <span>点击图片可查看原图</span>
+                <span class="flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                    {{ goods.view_count }} 次浏览
+                </span>
+            </div>
+        </div>
+
+        <!-- ========== 右侧：信息区 ========== -->
+        <div class="flex flex-col gap-6">
+
+            <!-- 标题 -->
+            <div>
+                <h1 class="text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
+                    {{ goods.title }}
+                </h1>
+                {% if goods.category %}
+                    <span class="inline-flex items-center gap-1 mt-2 text-sm text-gray-400">
+                        {{ goods.category.icon }} {{ goods.category.name }}
+                    </span>
+                {% endif %}
+            </div>
+
+            <!-- 价格 -->
+            <div class="flex items-baseline gap-1">
+                <span class="text-sm text-gray-400">¥</span>
+                <span class="text-4xl lg:text-5xl font-extrabold text-rose-600 tracking-tight">
+                    {{ goods.price|floatformat:0 }}
+                </span>
+            </div>
+
+            <!-- 状态 + 浏览量 + 发布时间 -->
+            <div class="flex flex-wrap items-center gap-3">
+                {% if goods.status == 0 %}
+                    <span class="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>在售
+                    </span>
+                {% elif goods.status == 1 %}
+                    <span class="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-700">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5"></span>交易中
+                    </span>
+                {% elif goods.status == 2 %}
+                    <span class="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-gray-200 text-gray-500">已售出</span>
+                {% elif goods.status == 3 %}
+                    <span class="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-600">已下架</span>
+                {% endif %}
+
+                <span class="text-xs text-gray-400 flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                    {{ goods.view_count }} 次浏览
+                </span>
+
+                <span class="text-xs text-gray-400">
+                    {{ goods.created_at|date:"Y-m-d H:i" }} 发布
+                </span>
+            </div>
+
+            <!-- 分隔线 -->
+            <div class="border-t border-gray-100"></div>
+
+            <!-- ===== 卖家信息卡片 ===== -->
+            <div class="bg-gray-50 rounded-2xl p-5 ring-1 ring-gray-100">
+                <div class="flex items-center gap-4">
+                    <!-- 卖家头像 -->
+                    {% if goods.user.profile.avatar %}
+                        <img src="{{ goods.user.profile.avatar.url }}"
+                             alt="{{ goods.user.username }}"
+                             class="w-14 h-14 rounded-full object-cover ring-2 ring-white shadow-sm flex-shrink-0">
+                    {% else %}
+                        <div class="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xl font-bold ring-2 ring-white shadow-sm flex-shrink-0">
+                            {{ goods.user.username|slice:":1"|upper }}
+                        </div>
+                    {% endif %}
+
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-gray-900">{{ goods.user.username }}</p>
+                        {% if goods.user.profile.dormitory %}
+                            <p class="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                                {{ goods.user.profile.dormitory }}
+                            </p>
+                        {% endif %}
+                        {% if goods.user.profile.contact_info %}
+                            <p class="text-xs text-gray-400 mt-0.5">
+                                联系方式：{{ goods.user.profile.contact_info }}
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 联系卖家按钮 ===== -->
+            {% if user.is_authenticated and user != goods.user %}
+                <button onclick="showContact()"
+                        class="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl hover:from-emerald-600 hover:to-teal-700 hover:shadow-lg hover:shadow-emerald-500/25 transition-all duration-300 shadow-md">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                    </svg>
+                    联系卖家
+                </button>
+
+                <!-- 联系方式弹窗 (隐藏) -->
+                <div id="contactModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onclick="hideContact(event)">
+                    <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full mx-4 transform scale-100 transition-all duration-300" onclick="event.stopPropagation()">
+                        <div class="text-center">
+                            <div class="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center mb-4">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-900 mb-2">联系卖家</h3>
+                            <p class="text-sm text-gray-500 mb-4">卖家：<strong>{{ goods.user.username }}</strong></p>
+                            <div class="bg-gray-50 rounded-xl p-4 mb-6">
+                                {% if goods.user.profile.contact_info %}
+                                    <p class="text-base font-semibold text-gray-900 break-all">{{ goods.user.profile.contact_info }}</p>
+                                {% else %}
+                                    <p class="text-sm text-gray-400">卖家暂未填写联系方式</p>
+                                {% endif %}
+                            </div>
+                            <button onclick="document.getElementById('contactModal').classList.add('hidden')"
+                                    class="w-full px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">
+                                我知道了
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            {% elif user == goods.user %}
+                <div class="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold text-gray-400 bg-gray-100 rounded-2xl cursor-not-allowed select-none">
+                    这是你的商品
+                </div>
+            {% else %}
+                <a href="/goods/login/?next=/goods/detail/{{ goods.id }}/"
+                   class="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl hover:from-emerald-600 hover:to-teal-700 hover:shadow-lg hover:shadow-emerald-500/25 transition-all duration-300 shadow-md">
+                    登录后联系卖家
+                </a>
+            {% endif %}
+
+            <!-- 分隔线 -->
+            <div class="border-t border-gray-100"></div>
+
+            <!-- ===== 商品描述 ===== -->
+            <div>
+                <h3 class="text-sm font-semibold text-gray-900 mb-3">📝 商品描述</h3>
+                <div class="text-sm text-gray-600 leading-relaxed whitespace-pre-line bg-gray-50 rounded-2xl p-5 ring-1 ring-gray-100">
+                    {{ goods.description|default:"卖家什么也没写……" }}
+                </div>
+            </div>
+
+        </div>
     </div>
-
 </div>
+
+<!-- ==================== 联系方式弹窗 JS ==================== -->
+<script>
+    function showContact() {
+        document.getElementById('contactModal').classList.remove('hidden');
+    }
+    function hideContact(event) {
+        if (event.target === event.currentTarget) {
+            document.getElementById('contactModal').classList.add('hidden');
+        }
+    }
+</script>
 
 {% endblock %}

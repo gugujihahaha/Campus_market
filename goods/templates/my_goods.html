@@ -1,29 +1,219 @@
 {% extends 'base.html' %}
 
+{% block title %}我的商品 - 校园二手{% endblock %}
+
 {% block content %}
 
-<h2 class="mb-4">我的商品</h2>
+<!-- ==================== 用户个人信息区 ==================== -->
+<section class="mb-10">
+    <div class="bg-white rounded-3xl shadow-sm ring-1 ring-gray-100 overflow-hidden">
+        <!-- 顶部装饰渐变条 -->
+        <div class="h-20 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
 
-<div class="row">
-    {% for item in goods %}
-        <div class="col-md-4">
-            <div class="card mb-4">
-
-                {% if item.image %}
-                    <img src="{{ item.image.url }}" class="card-img-top" style="height:200px;object-fit:cover;">
-                {% endif %}
-
-                <div class="card-body">
-                    <h5>{{ item.title }}</h5>
-                    <p>￥{{ item.price }}</p>
-
-                    <a href="/goods/detail/{{ item.id }}/" class="btn btn-primary btn-sm">查看</a>
-                    <a href="/goods/delete/{{ item.id }}/" class="btn btn-danger btn-sm">删除</a>
+        <div class="px-6 sm:px-8 pb-8">
+            <!-- 头像 + 基本信息 -->
+            <div class="flex flex-col sm:flex-row sm:items-end gap-5 -mt-10">
+                <!-- 头像 -->
+                <div class="relative">
+                    {% if user.profile.avatar %}
+                        <img src="{{ user.profile.avatar.url }}"
+                             alt="{{ user.username }}"
+                             class="w-20 h-20 rounded-2xl object-cover ring-4 ring-white shadow-md">
+                    {% else %}
+                        <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-2xl font-bold ring-4 ring-white shadow-md">
+                            {{ user.username|slice:":1"|upper }}
+                        </div>
+                    {% endif %}
                 </div>
 
+                <!-- 用户名 + 加入时间 -->
+                <div class="flex-1">
+                    <h1 class="text-xl font-bold text-gray-900">{{ user.username }}</h1>
+                    <p class="text-sm text-gray-400 mt-0.5">
+                        加入于 {{ user.date_joined|date:"Y-m-d" }}
+                    </p>
+                </div>
+
+                <!-- 联系标签 -->
+                <div class="flex flex-wrap items-center gap-2 text-sm">
+                    {% if user.profile.dormitory %}
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-700 text-xs font-medium">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            {{ user.profile.dormitory }}
+                        </span>
+                    {% endif %}
+                    {% if user.profile.contact_info %}
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                            </svg>
+                            {{ user.profile.contact_info }}
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- ===== 统计卡片行 ===== -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-gray-100">
+                <!-- 全部 -->
+                <div class="text-center p-3 rounded-2xl bg-gray-50">
+                    <p class="text-2xl font-bold text-gray-900">{{ total_count }}</p>
+                    <p class="text-xs text-gray-400 mt-0.5">全部商品</p>
+                </div>
+                <!-- 在售 -->
+                <div class="text-center p-3 rounded-2xl bg-emerald-50">
+                    <p class="text-2xl font-bold text-emerald-600">{{ on_sale_count }}</p>
+                    <p class="text-xs text-emerald-500 mt-0.5">在售</p>
+                </div>
+                <!-- 交易中 -->
+                <div class="text-center p-3 rounded-2xl bg-amber-50">
+                    <p class="text-2xl font-bold text-amber-600">{{ in_trade_count }}</p>
+                    <p class="text-xs text-amber-500 mt-0.5">交易中</p>
+                </div>
+                <!-- 已售出 -->
+                <div class="text-center p-3 rounded-2xl bg-gray-50">
+                    <p class="text-2xl font-bold text-gray-500">{{ sold_count }}</p>
+                    <p class="text-xs text-gray-400 mt-0.5">已售出</p>
+                </div>
             </div>
         </div>
-    {% endfor %}
-</div>
+    </div>
+</section>
+
+<!-- ==================== 商品管理区 ==================== -->
+<section>
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-lg font-bold text-gray-900">
+            我发布的商品 · 共 {{ total_count }} 件
+        </h2>
+        <a href="/goods/add/"
+           class="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full hover:from-indigo-700 hover:to-purple-700 hover:shadow-lg transition-all duration-300 shadow-md shadow-indigo-500/20">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            发布新商品
+        </a>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+        {% for item in goods %}
+            <div class="group bg-white rounded-2xl shadow-sm hover:-translate-y-1 hover:shadow-lg transition-all duration-300 overflow-hidden ring-1 ring-gray-100 flex flex-col">
+
+                <!-- 图片区 -->
+                <a href="/goods/detail/{{ item.id }}/" class="block aspect-[4/3] overflow-hidden bg-gray-100 relative">
+                    {% if item.image %}
+                        <img src="{{ item.image.url }}"
+                             alt="{{ item.title }}"
+                             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
+                             loading="lazy">
+                    {% else %}
+                        <div class="w-full h-full flex items-center justify-center text-gray-300 bg-gradient-to-br from-gray-50 to-gray-100">
+                            <svg class="w-12 h-12 sm:w-16 sm:h-16 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                        </div>
+                    {% endif %}
+
+                    <!-- 状态角标 -->
+                    <span class="absolute top-2 right-2 inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-full shadow-md
+                        {% if item.status == 0 %}bg-emerald-500 text-white
+                        {% elif item.status == 1 %}bg-amber-500 text-white
+                        {% elif item.status == 2 %}bg-gray-400 text-white
+                        {% else %}bg-red-400 text-white{% endif %}">
+                        {% if item.status == 0 %}在售{% elif item.status == 1 %}交易中{% elif item.status == 2 %}已售出{% else %}已下架{% endif %}
+                    </span>
+                </a>
+
+                <!-- 信息 + 操作区 -->
+                <div class="p-3 sm:p-4 flex flex-col flex-1">
+                    <!-- 标题 -->
+                    <a href="/goods/detail/{{ item.id }}/" class="block flex-1">
+                        <h3 class="text-sm sm:text-base font-semibold text-gray-900 line-clamp-2 leading-snug mb-1.5 hover:text-gray-600 transition-colors">
+                            {{ item.title }}
+                        </h3>
+                    </a>
+
+                    <!-- 价格 + 浏览量 -->
+                    <div class="flex items-end justify-between mb-3">
+                        <span class="text-base sm:text-lg font-bold text-rose-600">¥{{ item.price|floatformat:0 }}</span>
+                        <span class="text-[10px] text-gray-400 flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                            {{ item.view_count }}
+                        </span>
+                    </div>
+
+                    <!-- 操作按钮组 -->
+                    <div class="flex items-center gap-2">
+                        <!-- 查看按钮 -->
+                        <a href="/goods/detail/{{ item.id }}/"
+                           class="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 text-[11px] font-medium text-gray-600 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                            查看
+                        </a>
+
+                        <!-- 下架 / 重新上架 按钮 -->
+                        {% if item.status != 3 %}
+                            <a href="/goods/off_shelf/{{ item.id }}/"
+                               class="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 text-[11px] font-medium text-amber-600 bg-amber-50 rounded-xl hover:bg-amber-100 transition-colors"
+                               onclick="return confirm('确定要下架该商品吗？')">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                下架
+                            </a>
+                        {% else %}
+                            <a href="/goods/relist/{{ item.id }}/"
+                               class="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 text-[11px] font-medium text-emerald-600 bg-emerald-50 rounded-xl hover:bg-emerald-100 transition-colors">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                </svg>
+                                重新上架
+                            </a>
+                        {% endif %}
+
+                        <!-- 删除按钮 -->
+                        <a href="/goods/delete/{{ item.id }}/"
+                           class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 transition-colors"
+                           onclick="return confirm('确定要删除该商品吗？此操作不可撤销。')"
+                           title="删除">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <!-- 空状态 -->
+            <div class="col-span-full flex flex-col items-center justify-center py-24 text-gray-300">
+                <div class="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-6">
+                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                </div>
+                <p class="text-lg font-medium text-gray-400">还没有发布任何商品</p>
+                <p class="text-sm text-gray-300 mt-1">发布你的第一个闲置物品吧 🚀</p>
+                <a href="/goods/add/"
+                   class="mt-6 inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-gray-900 rounded-full hover:bg-gray-800 transition-all duration-300 shadow-md hover:shadow-lg">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    发布第一件商品
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+</section>
 
 {% endblock %}
