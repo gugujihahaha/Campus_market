@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>注册</h2>
+
+<form method="post" class="w-50">
+    {% csrf_token %}
+    <input class="form-control mb-2" type="text" name="username" placeholder="用户名">
+    <input class="form-control mb-2" type="password" name="password" placeholder="密码">
+    <button class="btn btn-success">注册</button>
+</form>
+
+<p class="text-danger">{{ error }}</p>
+
+{% endblock %}

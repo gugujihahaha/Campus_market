@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2 class="mb-4">我的商品</h2>
+
+<div class="row">
+    {% for item in goods %}
+        <div class="col-md-4">
+            <div class="card mb-4">
+
+                {% if item.image %}
+                    <img src="{{ item.image.url }}" class="card-img-top" style="height:200px;object-fit:cover;">
+                {% endif %}
+
+                <div class="card-body">
+                    <h5>{{ item.title }}</h5>
+                    <p>￥{{ item.price }}</p>
+
+                    <a href="/goods/detail/{{ item.id }}/" class="btn btn-primary btn-sm">查看</a>
+                    <a href="/goods/delete/{{ item.id }}/" class="btn btn-danger btn-sm">删除</a>
+                </div>
+
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

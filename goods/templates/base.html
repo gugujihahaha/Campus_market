@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>校园二手平台</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"PingFang SC"', '"Microsoft YaHei"', '"Helvetica Neue"', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen antialiased">
+
+<!-- 导航栏 -->
+<nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+
+            <!-- Logo -->
+            <a href="/goods/"
+               class="text-xl font-bold tracking-tight text-gray-900 hover:opacity-70 transition-opacity duration-200">
+                校园二手
+            </a>
+
+            <!-- 右侧操作按钮 -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <a href="/goods/add/"
+                   class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-full hover:bg-gray-800 transition-colors duration-200 shadow-sm">
+                    发布商品
+                </a>
+                <a href="/goods/my/"
+                   class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors duration-200">
+                    我的商品
+                </a>
+                <a href="/goods/login/"
+                   class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-full hover:bg-gray-50 hover:border-gray-300 transition-all duration-200">
+                    登录
+                </a>
+                <a href="/goods/register/"
+                   class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-full hover:bg-emerald-700 transition-colors duration-200 shadow-sm">
+                    注册
+                </a>
+            </div>
+
+        </div>
+    </div>
+</nav>
+
+<!-- 页面内容 -->
+<main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    {% block content %}
+    {% endblock %}
+</main>
+
+</body>
+</html>

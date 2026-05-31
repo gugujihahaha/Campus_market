@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="card">
+
+    {% if goods.image %}
+        <img src="{{ goods.image.url }}" class="card-img-top" style="max-height:400px;object-fit:cover;">
+    {% endif %}
+
+    <div class="card-body">
+        <h3>{{ goods.title }}</h3>
+        <h4 class="text-danger">￥{{ goods.price }}</h4>
+
+        <p>{{ goods.description }}</p>
+        <p class="text-muted">发布者：{{ goods.user.username }}</p>
+    </div>
+
+</div>
+
+{% endblock %}
