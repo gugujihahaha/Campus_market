@@ -23,29 +23,97 @@
     <!-- ==================== 左右分栏主体 ==================== -->
     <div class="grid md:grid-cols-2 gap-8 lg:gap-12">
 
-        <!-- ========== 左侧：图片区 ========== -->
-        <div>
-            {% if goods.image %}
-                <div class="relative rounded-3xl overflow-hidden shadow-lg shadow-gray-200/50 ring-1 ring-gray-100 bg-white">
-                    <img src="{{ goods.image.url }}"
-                         alt="{{ goods.title }}"
-                         class="w-full aspect-square object-cover">
-                </div>
-            {% else %}
-                <div class="rounded-3xl aspect-square bg-gradient-to-br from-gray-50 to-gray-100 shadow-lg shadow-gray-200/50 ring-1 ring-gray-100 flex items-center justify-center">
-                    <div class="text-center text-gray-300">
-                        <svg class="w-24 h-24 mx-auto mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
-                                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                        </svg>
-                        <p class="text-sm">暂无图片</p>
+        <!-- ========== 左侧：图片轮播区 ========== -->
+        <div x-data="carousel()">
+            <!-- 有图片时：轮播展示 -->
+            {% if images_count > 0 %}
+                <!-- 主图容器 -->
+                <div class="relative rounded-3xl overflow-hidden shadow-lg shadow-gray-200/50 ring-1 ring-gray-100 bg-white select-none"
+                     @touchstart="touchStart($event)"
+                     @touchend="touchEnd($event)">
+                    <div class="relative aspect-square overflow-hidden">
+                        {% for img in images %}
+                            <div
+                                class="absolute inset-0 transition-opacity duration-400 ease-in-out"
+                                :class="current === {{ forloop.counter0 }} ? 'opacity-100 z-10' : 'opacity-0 z-0'"
+                            >
+                                <img src="{{ img.image.url }}"
+                                     alt="{{ goods.title }} — 图片 {{ forloop.counter }}"
+                                     class="w-full h-full object-cover"
+                                     draggable="false">
+                            </div>
+                        {% endfor %}
                     </div>
+
+                    <!-- 左箭头（多图时显示） -->
+                    {% if images_count > 1 %}
+                        <button
+                            @click="prev()"
+                            class="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white shadow-md flex items-center justify-center text-gray-700 hover:text-gray-900 transition-all duration-200 opacity-70 hover:opacity-100"
+                            aria-label="上一张"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                            </svg>
+                        </button>
+
+                        <!-- 右箭头 -->
+                        <button
+                            @click="next()"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white shadow-md flex items-center justify-center text-gray-700 hover:text-gray-900 transition-all duration-200 opacity-70 hover:opacity-100"
+                            aria-label="下一张"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+
+                        <!-- 小圆点指示器 -->
+                        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+                            {% for img in images %}
+                                <button
+                                    @click="goTo({{ forloop.counter0 }})"
+                                    class="transition-all duration-300 rounded-full"
+                                    :class="current === {{ forloop.counter0 }} ? 'w-3 h-3 bg-white shadow-md' : 'w-2 h-2 bg-white/60 hover:bg-white/90'"
+                                    aria-label="切换到图片 {{ forloop.counter }}"
+                                ></button>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <!-- 图片计数器（多图时显示） -->
+                    {% if images_count > 1 %}
+                        <div class="absolute top-4 right-4 z-20 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm text-white text-xs font-medium"
+                             x-text="(current + 1) + ' / {{ images_count }}'"
+                        ></div>
+                    {% endif %}
                 </div>
+
+            {% else %}
+                <!-- 无多图时：显示旧版单图（向后兼容） -->
+                {% if goods.image %}
+                    <div class="relative rounded-3xl overflow-hidden shadow-lg shadow-gray-200/50 ring-1 ring-gray-100 bg-white">
+                        <img src="{{ goods.image.url }}"
+                             alt="{{ goods.title }}"
+                             class="w-full aspect-square object-cover">
+                    </div>
+                {% else %}
+                    <!-- 无图占位 -->
+                    <div class="rounded-3xl aspect-square bg-gradient-to-br from-gray-50 to-gray-100 shadow-lg shadow-gray-200/50 ring-1 ring-gray-100 flex items-center justify-center">
+                        <div class="text-center text-gray-300">
+                            <svg class="w-24 h-24 mx-auto mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <p class="text-sm">暂无图片</p>
+                        </div>
+                    </div>
+                {% endif %}
             {% endif %}
 
-            <!-- 缩略图/底部提示 -->
+            <!-- 底部提示 -->
             <div class="mt-4 flex items-center justify-between text-xs text-gray-400 px-2">
-                <span>点击图片可查看原图</span>
+                <span>{% if images_count > 0 %}共 {{ images_count }} 张图片{% elif goods.image %}共 1 张图片{% else %}卖家暂未上传图片{% endif %}</span>
                 <span class="flex items-center gap-1">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -71,12 +139,30 @@
                 {% endif %}
             </div>
 
-            <!-- 价格 -->
-            <div class="flex items-baseline gap-1">
-                <span class="text-sm text-gray-400">¥</span>
-                <span class="text-4xl lg:text-5xl font-extrabold text-rose-600 tracking-tight">
-                    {{ goods.price|floatformat:0 }}
-                </span>
+            <!-- 价格 + 收藏 -->
+            <div class="flex items-end justify-between gap-4">
+                <div class="flex items-baseline gap-1">
+                    <span class="text-sm text-gray-400">¥</span>
+                    <span class="text-4xl lg:text-5xl font-extrabold text-rose-600 tracking-tight">
+                        {{ goods.price|floatformat:0 }}
+                    </span>
+                </div>
+                <!-- 收藏按钮 -->
+                <div x-data="favBtn({{ is_favorited|yesno:'true,false' }}, {{ favorite_count }})" class="flex-shrink-0">
+                    <button @click="toggle()"
+                            class="group flex items-center gap-1.5 px-3 py-2 rounded-xl transition-all duration-200"
+                            :class="favorited ? 'bg-red-50 hover:bg-red-100' : 'bg-gray-50 hover:bg-gray-100'"
+                            title="收藏">
+                        <svg class="w-6 h-6 transition-all duration-300"
+                             :class="favorited ? 'text-red-500 scale-110' : 'text-gray-300 group-hover:text-red-400'"
+                             fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
+                        <span class="text-xs font-semibold"
+                              :class="favorited ? 'text-red-500' : 'text-gray-400'"
+                              x-text="count > 0 ? count : ''"></span>
+                    </button>
+                </div>
             </div>
 
             <!-- 状态 + 浏览量 + 发布时间 -->
@@ -117,16 +203,16 @@
                     <!-- 卖家头像 -->
                     {% if goods.user.profile.avatar %}
                         <img src="{{ goods.user.profile.avatar.url }}"
-                             alt="{{ goods.user.username }}"
+                             alt="{{ goods.user.profile.display_name }}"
                              class="w-14 h-14 rounded-full object-cover ring-2 ring-white shadow-sm flex-shrink-0">
                     {% else %}
                         <div class="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xl font-bold ring-2 ring-white shadow-sm flex-shrink-0">
-                            {{ goods.user.username|slice:":1"|upper }}
+                            {{ goods.user.profile.display_name|slice:":1"|upper }}
                         </div>
                     {% endif %}
 
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm font-semibold text-gray-900">{{ goods.user.username }}</p>
+                        <p class="text-sm font-semibold text-gray-900">{{ goods.user.profile.display_name }}</p>
                         {% if goods.user.profile.dormitory %}
                             <p class="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -136,14 +222,55 @@
                                 {{ goods.user.profile.dormitory }}
                             </p>
                         {% endif %}
-                        {% if goods.user.profile.contact_info %}
+                        {% if goods.user.profile.phone %}
                             <p class="text-xs text-gray-400 mt-0.5">
-                                联系方式：{{ goods.user.profile.contact_info }}
+                                手机：{{ goods.user.profile.phone }}
+                            </p>
+                        {% endif %}
+                        {% if goods.user.profile.wechat %}
+                            <p class="text-xs text-gray-400 mt-0.5">
+                                微信：{{ goods.user.profile.wechat }}
                             </p>
                         {% endif %}
                     </div>
                 </div>
+                <!-- 卖家简介 -->
+                {% if goods.user.profile.bio %}
+                    <p class="mt-3 text-xs text-gray-500 italic leading-relaxed border-t border-gray-200 pt-3">
+                        "{{ goods.user.profile.bio }}"
+                    </p>
+                {% endif %}
             </div>
+
+            <!-- ===== 我想要按钮 ===== -->
+            {% if user.is_authenticated and user != goods.user %}
+                {% if goods.status == 0 %}
+                    <!-- 在售：可下单 -->
+                    <button onclick="showOrderModal()"
+                            class="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold text-white bg-gradient-to-r from-rose-500 to-pink-600 rounded-2xl hover:from-rose-600 hover:to-pink-700 hover:shadow-lg hover:shadow-rose-500/25 transition-all duration-300 shadow-md">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/>
+                        </svg>
+                        我想要
+                    </button>
+                {% elif goods.status == 1 %}
+                    <div class="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold text-amber-600 bg-amber-50 border border-amber-200 rounded-2xl cursor-not-allowed select-none">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        已被预订
+                    </div>
+                {% elif goods.status == 2 %}
+                    <div class="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold text-gray-400 bg-gray-100 rounded-2xl cursor-not-allowed select-none">
+                        已售出
+                    </div>
+                {% endif %}
+            {% elif not user.is_authenticated %}
+                <a href="/goods/login/?next=/goods/detail/{{ goods.id }}/"
+                   class="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold text-white bg-gradient-to-r from-rose-500 to-pink-600 rounded-2xl hover:from-rose-600 hover:to-pink-700 transition-all duration-300 shadow-md">
+                    登录后购买
+                </a>
+            {% endif %}
 
             <!-- ===== 联系卖家按钮 ===== -->
             {% if user.is_authenticated and user != goods.user %}
@@ -165,11 +292,25 @@
                                 </svg>
                             </div>
                             <h3 class="text-lg font-bold text-gray-900 mb-2">联系卖家</h3>
-                            <p class="text-sm text-gray-500 mb-4">卖家：<strong>{{ goods.user.username }}</strong></p>
-                            <div class="bg-gray-50 rounded-xl p-4 mb-6">
-                                {% if goods.user.profile.contact_info %}
-                                    <p class="text-base font-semibold text-gray-900 break-all">{{ goods.user.profile.contact_info }}</p>
-                                {% else %}
+                            <p class="text-sm text-gray-500 mb-4">卖家：<strong>{{ goods.user.profile.display_name }}</strong></p>
+                            <div class="bg-gray-50 rounded-xl p-4 mb-6 space-y-2">
+                                {% if goods.user.profile.phone %}
+                                    <p class="text-sm text-gray-700 flex items-center gap-2">
+                                        <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                                        </svg>
+                                        <span class="font-semibold">{{ goods.user.profile.phone }}</span>
+                                    </p>
+                                {% endif %}
+                                {% if goods.user.profile.wechat %}
+                                    <p class="text-sm text-gray-700 flex items-center gap-2">
+                                        <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                                        </svg>
+                                        <span class="font-semibold">{{ goods.user.profile.wechat }}</span>
+                                    </p>
+                                {% endif %}
+                                {% if not goods.user.profile.phone and not goods.user.profile.wechat %}
                                     <p class="text-sm text-gray-400">卖家暂未填写联系方式</p>
                                 {% endif %}
                             </div>
@@ -219,4 +360,408 @@
     }
 </script>
 
+<!-- ==================== 移动端底部固定操作栏 ==================== -->
+<div class="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-xl border-t border-gray-200 px-4 py-3 safe-bottom" style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));">
+    <div class="flex items-center gap-3">
+        <!-- 价格 -->
+        <div class="flex-shrink-0">
+            <span class="text-xs text-gray-400">¥</span>
+            <span class="text-xl font-extrabold text-rose-600">{{ goods.price|floatformat:0 }}</span>
+        </div>
+        <!-- 按钮组 -->
+        <div class="flex-1 flex items-center gap-2">
+            {% if user.is_authenticated and user != goods.user %}
+                {% if goods.status == 0 %}
+                    <button onclick="showOrderModal()" class="flex-1 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-rose-500 to-pink-600 rounded-xl active:scale-95 transition-transform">
+                        我想要
+                    </button>
+                {% endif %}
+                <button onclick="showContact()" class="flex-1 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl active:scale-95 transition-transform">
+                    联系卖家
+                </button>
+            {% elif not user.is_authenticated %}
+                <a href="/goods/login/?next=/goods/detail/{{ goods.id }}/" class="flex-1 py-2.5 text-sm font-semibold text-center text-white bg-gradient-to-r from-rose-500 to-pink-600 rounded-xl">
+                    登录后购买
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- ==================== 下单确认弹窗 ==================== -->
+<div id="orderModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onclick="hideOrderModal(event)">
+    <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full mx-4" onclick="event.stopPropagation()">
+        <div class="text-center">
+            <div class="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center mb-4">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/>
+                </svg>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">确认下单</h3>
+            <p class="text-sm text-gray-500 mb-2">确定要购买以下商品吗？</p>
+            <div class="bg-gray-50 rounded-xl p-4 mb-4 text-left">
+                <p class="text-sm font-semibold text-gray-900">{{ goods.title }}</p>
+                <p class="text-lg font-bold text-rose-600 mt-1">¥{{ goods.price|floatformat:0 }}</p>
+                <p class="text-xs text-gray-400 mt-1">卖家：{{ goods.user.profile.display_name }}</p>
+            </div>
+            <p class="text-xs text-gray-400 mb-6">下单后商品将变为"交易中"状态，请及时联系卖家</p>
+            <div class="flex gap-3">
+                <button onclick="hideOrderModalDirect()"
+                        class="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">
+                    取消
+                </button>
+                <button onclick="submitOrder()" id="orderSubmitBtn"
+                        class="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-rose-500 to-pink-600 rounded-xl hover:from-rose-600 hover:to-pink-700 transition-all shadow-md">
+                    确认下单
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== 留言区 ==================== -->
+<div class="max-w-6xl mx-auto mt-12 mb-24 md:mb-0">
+    <div class="bg-white rounded-3xl shadow-sm ring-1 ring-gray-100 p-6 sm:p-8 lg:p-10">
+
+        <!-- 标题 -->
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                </svg>
+                留言
+                <span id="commentCount" class="text-sm font-normal text-gray-400"></span>
+            </h3>
+        </div>
+
+        <!-- ===== 留言输入框（登录可见） ===== -->
+        {% if user.is_authenticated %}
+            <div id="commentForm" class="mb-8">
+                <div class="flex gap-3">
+                    <!-- 当前用户头像 -->
+                    <div class="flex-shrink-0">
+                        {% if user.profile.avatar %}
+                            <img src="{{ user.profile.avatar.url }}" class="w-9 h-9 rounded-full object-cover ring-2 ring-gray-100">
+                        {% else %}
+                            <div class="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-sm font-bold">
+                                {{ user.profile.display_name|slice:":1"|upper }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="flex-1">
+                        <textarea id="commentInput"
+                                  rows="3"
+                                  maxlength="500"
+                                  placeholder="说点什么吧……"
+                                  class="w-full px-4 py-3 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-200 placeholder:text-gray-300 resize-none"></textarea>
+                        <div class="flex items-center justify-between mt-2">
+                            <span class="text-xs text-gray-400"><span id="charCount">0</span> / 500</span>
+                            <button id="submitComment"
+                                    onclick="submitComment()"
+                                    class="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl hover:from-emerald-600 hover:to-teal-700 hover:shadow-md transition-all duration-200 shadow-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-3.348-7.827a9 9 0 1113.349 3.827z"/>
+                                </svg>
+                                发布
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="mb-8 p-5 rounded-2xl bg-gray-50 border border-gray-100 text-center">
+                <p class="text-sm text-gray-400">
+                    <a href="/goods/login/?next=/goods/detail/{{ goods.id }}/" class="font-medium text-emerald-600 hover:text-emerald-700 transition-colors">登录</a>
+                    后参与留言
+                </p>
+            </div>
+        {% endif %}
+
+        <!-- ===== 留言列表容器 ===== -->
+        <div id="commentList" class="space-y-0">
+            <!-- AJAX 动态填充 -->
+            <div class="flex justify-center py-12">
+                <div class="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        </div>
+
+        <!-- ===== 留言空状态模板（隐藏） ===== -->
+        <div id="commentEmpty" class="hidden text-center py-12">
+            <div class="w-16 h-16 mx-auto rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                </svg>
+            </div>
+            <p class="text-sm text-gray-400">还没有留言，来说两句吧 💬</p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // --- 图片轮播 Alpine.js 组件 ---
+    function carousel() {
+        return {
+            current: 0,
+            total: {{ images_count|default:0 }},
+            touchStartX: 0,
+            touchEndX: 0,
+            init() { this.total = {{ images_count|default:0 }}; },
+            next() { if (this.total <= 1) return; this.current = (this.current + 1) % this.total; },
+            prev() { if (this.total <= 1) return; this.current = (this.current - 1 + this.total) % this.total; },
+            goTo(idx) { this.current = idx; },
+            touchStart(e) { this.touchStartX = e.changedTouches[0].screenX; },
+            touchEnd(e) {
+                this.touchEndX = e.changedTouches[0].screenX;
+                const diff = this.touchStartX - this.touchEndX;
+                if (Math.abs(diff) > 50) { diff > 0 ? this.next() : this.prev(); }
+            },
+        };
+    }
+
+    // --- 收藏按钮 Alpine.js 组件 ---
+    function favBtn(initialFav, initialCount) {
+        return {
+            favorited: initialFav,
+            count: initialCount,
+            bouncing: false,
+            async toggle() {
+                if (!IS_AUTH) {
+                    window.location.href = '/goods/login/?next=/goods/detail/{{ goods.id }}/';
+                    return;
+                }
+                this.bouncing = true;
+                setTimeout(() => this.bouncing = false, 400);
+                try {
+                    const res = await fetch(`/goods/{{ goods.id }}/favorite/`, {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': getCSRF() },
+                    });
+                    const data = await res.json();
+                    this.favorited = data.status === 'favorited';
+                    this.count = data.count;
+                } catch (e) {
+                    console.error('Favorite toggle failed', e);
+                }
+            },
+        };
+    }
+
+    // --- 留言系统 ---
+    const GOODS_ID = {{ goods.id }};
+    const IS_AUTH = {{ user.is_authenticated|yesno:"true,false" }};
+    const CURRENT_USER = "{{ user.username|default:'' }}";
+    const GOODS_OWNER = "{{ goods.user.username }}";
+    let replyToId = null;
+    let replyToUser = null;
+
+    // 字符计数
+    const commentInput = document.getElementById('commentInput');
+    const charCount = document.getElementById('charCount');
+    if (commentInput && charCount) {
+        commentInput.addEventListener('input', () => {
+            charCount.textContent = commentInput.value.length;
+            charCount.classList.toggle('text-red-500', commentInput.value.length > 450);
+        });
+    }
+
+    // 页面加载时获取留言
+    document.addEventListener('DOMContentLoaded', loadComments);
+
+    async function loadComments() {
+        try {
+            const res = await fetch(`/goods/${GOODS_ID}/comments/`);
+            const data = await res.json();
+            if (data.success) {
+                renderComments(data);
+            }
+        } catch (e) {
+            document.getElementById('commentList').innerHTML =
+                '<p class="text-center text-sm text-red-400 py-8">加载留言失败，请刷新重试</p>';
+        }
+    }
+
+    function renderComments(data) {
+        const container = document.getElementById('commentList');
+        const emptyHint = document.getElementById('commentEmpty');
+        document.getElementById('commentCount').textContent = data.total > 0 ? `(${data.total})` : '';
+
+        if (data.comments.length === 0) {
+            container.innerHTML = '';
+            emptyHint.classList.remove('hidden');
+            return;
+        }
+        emptyHint.classList.add('hidden');
+
+        let html = '';
+        data.comments.forEach(c => html += renderCommentItem(c, data, 0));
+        container.innerHTML = html;
+    }
+
+    function renderCommentItem(c, data, depth) {
+        const canDelete = (c.user === CURRENT_USER || CURRENT_USER === GOODS_OWNER);
+        const avatarHtml = c.avatar_url
+            ? `<img src="${c.avatar_url}" class="w-8 h-8 rounded-full object-cover ring-2 ring-gray-100">`
+            : `<div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold">${c.initial}</div>`;
+
+        const marginClass = depth > 0 ? 'ml-10 border-l-2 border-gray-100 pl-4' : '';
+        const bgClass = depth > 0 ? 'bg-gray-50/50 rounded-xl p-3' : '';
+
+        let html = `
+        <div class="comment-item ${marginClass} ${bgClass} py-3 ${depth === 0 ? 'border-b border-gray-50' : 'mt-2'}" id="comment-${c.id}">
+            <div class="flex gap-3">
+                <div class="flex-shrink-0">${avatarHtml}</div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-sm font-semibold text-gray-900">${escHtml(c.display_name)}</span>
+                        <span class="text-xs text-gray-400">${c.created_at}</span>
+                    </div>
+                    <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">${escHtml(c.content)}</p>
+                    <div class="flex items-center gap-3 mt-2">
+                        ${IS_AUTH
+                            ? `<button onclick="startReply(${c.id}, '${escHtml(c.display_name)}')" class="text-xs text-gray-400 hover:text-emerald-600 transition-colors">回复</button>`
+                            : ''}
+                        ${canDelete
+                            ? `<button onclick="deleteComment(${c.id})" class="text-xs text-gray-400 hover:text-red-500 transition-colors">删除</button>`
+                            : ''}
+                    </div>`;
+
+        // 渲染回复
+        if (c.replies && c.replies.length > 0) {
+            c.replies.forEach(r => html += renderCommentItem(r, data, depth + 1));
+        }
+
+        html += `</div></div></div>`;
+        return html;
+    }
+
+    async function submitComment() {
+        if (!IS_AUTH) { window.location.href = '/goods/login/?next=/goods/detail/' + GOODS_ID + '/'; return; }
+
+        const content = commentInput.value.trim();
+        if (!content) { shake(commentInput); return; }
+        if (content.length > 500) { alert('留言不能超过500字'); return; }
+
+        const body = { content: content };
+        if (replyToId) body.parent_id = replyToId;
+
+        try {
+            const res = await fetch(`/goods/${GOODS_ID}/comment/add/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRF() },
+                body: JSON.stringify(body),
+            });
+            const data = await res.json();
+            if (data.success) {
+                commentInput.value = '';
+                charCount.textContent = '0';
+                cancelReply();
+                loadComments();
+            } else {
+                alert(data.error || '发布失败');
+            }
+        } catch (e) {
+            alert('网络错误，请重试');
+        }
+    }
+
+    function startReply(id, username) {
+        replyToId = id;
+        replyToUser = username;
+        commentInput.value = `@${username} `;
+        commentInput.focus();
+        // 显示回复提示条
+        let bar = document.getElementById('replyBar');
+        if (!bar) {
+            bar = document.createElement('div');
+            bar.id = 'replyBar';
+            bar.className = 'flex items-center justify-between px-4 py-2 bg-emerald-50 rounded-xl mb-3 text-sm';
+            commentInput.parentNode.insertBefore(bar, commentInput);
+        }
+        bar.innerHTML = `
+            <span class="text-emerald-700">回复 <strong>${username}</strong></span>
+            <button onclick="cancelReply()" class="text-emerald-500 hover:text-emerald-700">&times;</button>`;
+    }
+
+    function cancelReply() {
+        replyToId = null;
+        replyToUser = null;
+        commentInput.value = '';
+        const bar = document.getElementById('replyBar');
+        if (bar) bar.remove();
+    }
+
+    async function deleteComment(commentId) {
+        if (!confirm('确定要删除这条留言吗？')) return;
+        try {
+            const res = await fetch(`/goods/${GOODS_ID}/comment/delete/${commentId}/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCSRF() },
+            });
+            const data = await res.json();
+            if (data.success) {
+                loadComments();
+            } else {
+                alert(data.error || '删除失败');
+            }
+        } catch (e) {
+            alert('网络错误，请重试');
+        }
+    }
+
+    function getCSRF() {
+        const cookie = document.cookie.split('; ').find(r => r.startsWith('csrftoken='));
+        return cookie ? cookie.split('=')[1] : '';
+    }
+
+    function escHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    function shake(el) {
+        el.classList.add('ring-2', 'ring-red-400');
+        setTimeout(() => el.classList.remove('ring-2', 'ring-red-400'), 600);
+    }
+
+    // --- 下单系统 ---
+    function showOrderModal() {
+        document.getElementById('orderModal').classList.remove('hidden');
+    }
+    function hideOrderModal(e) {
+        if (e.target === e.currentTarget) {
+            document.getElementById('orderModal').classList.add('hidden');
+        }
+    }
+    function hideOrderModalDirect() {
+        document.getElementById('orderModal').classList.add('hidden');
+    }
+
+    async function submitOrder() {
+        const btn = document.getElementById('orderSubmitBtn');
+        btn.disabled = true;
+        btn.textContent = '处理中...';
+        try {
+            const res = await fetch(`/goods/{{ goods.id }}/order/create/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCSRF() },
+            });
+            const data = await res.json();
+            if (data.success) {
+                hideOrderModalDirect();
+                alert('下单成功！订单号：' + data.order.order_no);
+                location.reload();
+            } else {
+                alert(data.error || '下单失败');
+            }
+        } catch (e) {
+            alert('网络错误，请重试');
+        }
+        btn.disabled = false;
+        btn.textContent = '确认下单';
+    }
+</script>
 {% endblock %}

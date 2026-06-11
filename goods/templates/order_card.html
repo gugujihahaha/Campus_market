@@ -1,0 +1,132 @@
+<div class="p-5 hover:bg-gray-50/50 transition-colors">
+    <div class="flex gap-4">
+        <!-- 商品图片 -->
+        <a href="/goods/detail/{{ order.goods.id }}/" class="flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden bg-gray-100">
+            {% with img=order.goods.first_image %}
+                {% if img %}
+                    <img src="{{ img.url }}" class="w-full h-full object-cover" loading="lazy">
+                {% else %}
+                    <div class="w-full h-full flex items-center justify-center text-gray-300">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    </div>
+                {% endif %}
+            {% endwith %}
+        </a>
+
+        <!-- 订单信息 -->
+        <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                    <a href="/goods/detail/{{ order.goods.id }}/" class="text-sm font-semibold text-gray-900 hover:text-gray-600 line-clamp-1">
+                        {{ order.goods.title }}
+                    </a>
+                    <p class="text-xs text-gray-400 mt-0.5">
+                        {{ role|yesno:'买家,卖家' }}：
+                        {% if role == 'buyer' %}
+                            {{ order.seller.profile.display_name }}
+                        {% else %}
+                            {{ order.buyer.profile.display_name }}
+                        {% endif %}
+                    </p>
+                </div>
+                <!-- 状态标签 -->
+                <span class="flex-shrink-0 inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full
+                    {% if order.status == 0 %}bg-amber-100 text-amber-700
+                    {% elif order.status == 1 %}bg-blue-100 text-blue-700
+                    {% elif order.status == 2 %}bg-emerald-100 text-emerald-700
+                    {% else %}bg-gray-100 text-gray-500{% endif %}">
+                    {{ order.status_label }}
+                </span>
+            </div>
+
+            <!-- 价格 + 时间 -->
+            <div class="flex items-center justify-between mt-2">
+                <span class="text-base font-bold text-rose-600">¥{{ order.price|floatformat:0 }}</span>
+                <span class="text-xs text-gray-400">{{ order.created_at|date:"m-d H:i" }}</span>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="flex items-center gap-2 mt-3">
+                <!-- 卖家：待确认 -->
+                {% if role == 'seller' and order.status == 0 %}
+                    <button onclick="confirmOrder({{ order.id }})"
+                            class="px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors">
+                        确认交易
+                    </button>
+                    <button onclick="cancelOrder({{ order.id }})"
+                            class="px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                        拒绝
+                    </button>
+                {% endif %}
+
+                <!-- 买家：待确认 -->
+                {% if role == 'buyer' and order.status == 0 %}
+                    <button onclick="cancelOrder({{ order.id }})"
+                            class="px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                        取消订单
+                    </button>
+                {% endif %}
+
+                <!-- 双方：交易中 -->
+                {% if order.status == 1 %}
+                    <button onclick="showContactForOrder({{ order.id }})"
+                            class="px-3 py-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors">
+                        <svg class="w-3.5 h-3.5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                        查看联系方式
+                    </button>
+                    {% if role == 'seller' %}
+                        <button onclick="completeOrder({{ order.id }})"
+                                class="px-3 py-1.5 text-xs font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors">
+                            标记完成
+                        </button>
+                    {% endif %}
+                    <button onclick="cancelOrder({{ order.id }})"
+                            class="px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-red-500 transition-colors">
+                        取消交易
+                    </button>
+                {% endif %}
+
+                <!-- 订单号 -->
+                <span class="ml-auto text-[10px] text-gray-300">{{ order.order_no }}</span>
+            </div>
+
+            <!-- 取消原因 -->
+            {% if order.status == 3 and order.cancel_reason %}
+                <p class="mt-2 text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-1.5">
+                    取消原因：{{ order.cancel_reason }}
+                </p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ===== 状态时间线 ===== -->
+    <div class="mt-4 pt-3 border-t border-gray-100">
+        <div class="flex items-center gap-0">
+            <!-- 下单 -->
+            <div class="flex-1 flex items-center">
+                <div class="w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-emerald-100 flex-shrink-0"></div>
+                <div class="ml-2 text-[10px] text-gray-400">{{ order.created_at|date:"m-d H:i" }} 下单</div>
+                <div class="flex-1 h-px bg-gray-200 mx-2"></div>
+            </div>
+            <!-- 确认 -->
+            <div class="flex-1 flex items-center">
+                <div class="w-3 h-3 rounded-full flex-shrink-0 {% if order.status >= 1 %}bg-emerald-500 ring-2 ring-emerald-100{% else %}bg-gray-300{% endif %}"></div>
+                <div class="ml-2 text-[10px] text-gray-400">确认交易</div>
+                <div class="flex-1 h-px bg-gray-200 mx-2"></div>
+            </div>
+            <!-- 完成/取消 -->
+            <div class="flex items-center">
+                {% if order.status == 3 %}
+                    <div class="w-3 h-3 rounded-full bg-red-400 ring-2 ring-red-100 flex-shrink-0"></div>
+                    <div class="ml-2 text-[10px] text-red-400">已取消</div>
+                {% elif order.status == 2 %}
+                    <div class="w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-emerald-100 flex-shrink-0"></div>
+                    <div class="ml-2 text-[10px] text-emerald-600">已完成</div>
+                {% else %}
+                    <div class="w-3 h-3 rounded-full bg-gray-300 flex-shrink-0"></div>
+                    <div class="ml-2 text-[10px] text-gray-400">待完成</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>

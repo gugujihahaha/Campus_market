@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load highlight_tags %}
 
 {% block title %}校园二手 — 发现好物{% endblock %}
 
@@ -39,36 +40,73 @@
     </div>
 </section>
 
-<!-- ==================== 搜索栏 ==================== -->
-<section class="mb-6">
-    <form method="get" action="/goods/" class="relative">
-        <!-- 保留分类参数 -->
+<!-- ==================== 搜索栏 + 排序 ==================== -->
+<section class="mb-4">
+    <form method="get" action="/goods/" id="searchForm">
+        <!-- 保留其他筛选参数 -->
         {% if current_category %}
             <input type="hidden" name="category" value="{{ current_category }}">
         {% endif %}
-        <div class="relative">
-            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {% if price_min %}
+            <input type="hidden" name="price_min" value="{{ price_min }}">
+        {% endif %}
+        {% if price_max %}
+            <input type="hidden" name="price_max" value="{{ price_max }}">
+        {% endif %}
+
+        <div class="flex items-stretch gap-2">
+            <!-- 搜索框 -->
+            <div class="relative flex-1">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </span>
+                <input type="text"
+                       name="q"
+                       value="{{ keyword }}"
+                       placeholder="搜索商品标题或描述..."
+                       id="searchInput"
+                       class="w-full h-full pl-12 pr-4 py-3.5 text-sm text-gray-900 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent shadow-sm hover:shadow-md transition-all duration-200 placeholder:text-gray-300">
+                {% if keyword %}
+                    <a href="/goods/{% if current_category %}?category={{ current_category }}{% endif %}"
+                       class="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 text-xs text-gray-400 hover:text-gray-600 transition-colors">
+                        清除
+                    </a>
+                {% endif %}
+            </div>
+
+            <!-- 排序下拉 -->
+            <select name="sort"
+                    onchange="this.form.submit()"
+                    class="flex-shrink-0 px-4 py-3.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer appearance-none pr-10"
+                    style="background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22 fill=%22none%22 stroke=%22%239ca3af%22 stroke-width=%222%22%3E%3Cpath d=%22m6 9 6 6 6-6%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 8px center; background-size: 18px;">
+                {% for val, label in sort_labels.items %}
+                    <option value="{{ val }}" {% if sort == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+
+            <!-- 搜索按钮 -->
+            <button type="submit"
+                    class="flex-shrink-0 inline-flex items-center justify-center gap-1.5 px-5 py-3.5 text-sm font-semibold text-white bg-emerald-600 rounded-2xl hover:bg-emerald-700 hover:shadow-md transition-all duration-200 shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>
-            </span>
-            <input type="text"
-                   name="q"
-                   value="{{ keyword }}"
-                   placeholder="搜索商品标题或描述..."
-                   class="w-full pl-12 pr-20 py-3.5 text-sm text-gray-900 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent shadow-sm hover:shadow-md transition-all duration-200 placeholder:text-gray-300">
-            <button type="submit"
-                    class="absolute right-2 top-1/2 -translate-y-1/2 px-5 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 hover:shadow-md transition-all duration-200">
                 搜索
             </button>
-            {% if keyword %}
-                <a href="/goods/{% if current_category %}?category={{ current_category }}{% endif %}"
-                   class="absolute right-20 top-1/2 -translate-y-1/2 mr-2 px-2 py-1 text-xs text-gray-400 hover:text-gray-600 transition-colors">
-                    清除
-                </a>
-            {% endif %}
         </div>
     </form>
+
+    <!-- 热门搜索标签 -->
+    <div class="mt-3 flex items-center gap-2 flex-wrap">
+        <span class="text-xs text-gray-400 flex-shrink-0">热门搜索：</span>
+        {% for tag in hot_tags %}
+            <a href="/goods/?q={{ tag|urlencode }}{% if current_category %}&category={{ current_category }}{% endif %}"
+               class="inline-flex items-center px-3 py-1 text-xs font-medium text-gray-500 bg-white border border-gray-200 rounded-full hover:border-emerald-300 hover:text-emerald-600 hover:bg-emerald-50 transition-all duration-200 cursor-pointer">
+                {{ tag }}
+            </a>
+        {% endfor %}
+    </div>
 </section>
 
 <!-- ==================== 分类胶囊筛选栏 ==================== -->
@@ -106,6 +144,53 @@
     </div>
 </section>
 
+<!-- ==================== 价格区间筛选 ==================== -->
+<section class="mb-8">
+    <form method="get" action="/goods/" class="flex items-center gap-3 flex-wrap">
+        {% if keyword %}<input type="hidden" name="q" value="{{ keyword }}">{% endif %}
+        {% if current_category %}<input type="hidden" name="category" value="{{ current_category }}">{% endif %}
+        {% if sort != 'default' %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+
+        <span class="text-xs font-semibold text-gray-500 flex items-center gap-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            价格区间
+        </span>
+
+        <div class="flex items-center gap-2">
+            <input type="number"
+                   name="price_min"
+                   value="{{ price_min }}"
+                   placeholder="最低价"
+                   min="0"
+                   step="0.01"
+                   class="w-28 px-3 py-2 text-xs text-gray-900 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent shadow-sm placeholder:text-gray-300">
+            <span class="text-gray-300 text-xs">—</span>
+            <input type="number"
+                   name="price_max"
+                   value="{{ price_max }}"
+                   placeholder="最高价"
+                   min="0"
+                   step="0.01"
+                   class="w-28 px-3 py-2 text-xs text-gray-900 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent shadow-sm placeholder:text-gray-300">
+            <button type="submit"
+                    class="inline-flex items-center gap-1 px-4 py-2 text-xs font-semibold text-white bg-gray-900 rounded-xl hover:bg-gray-800 hover:shadow-md transition-all duration-200">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                </svg>
+                筛选
+            </button>
+            {% if price_min or price_max %}
+                <a href="/goods/{% if keyword %}?q={{ keyword|urlencode }}{% endif %}{% if current_category %}{% if keyword %}&{% endif %}category={{ current_category }}{% endif %}{% if sort != 'default' %}{% if keyword or current_category %}&{% endif %}sort={{ sort }}{% endif %}"
+                   class="text-xs text-gray-400 hover:text-gray-600 transition-colors ml-1">
+                    清除价格
+                </a>
+            {% endif %}
+        </div>
+    </form>
+</section>
+
 <!-- ==================== 商品卡片网格 ==================== -->
 <section id="goods-grid">
     <div class="flex items-center justify-between mb-6">
@@ -122,26 +207,54 @@
         </h2>
     </div>
 
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
         {% for item in goods %}
             <a href="/goods/detail/{{ item.id }}/"
-               class="group block bg-white rounded-2xl shadow-sm hover:-translate-y-1.5 hover:shadow-xl transition-all duration-300 overflow-hidden ring-1 ring-gray-100 hover:ring-gray-200">
+               class="group block bg-white rounded-2xl shadow-sm hover:-translate-y-1.5 hover:shadow-2xl hover:ring-gray-300 transition-all duration-300 ease-in-out overflow-hidden ring-1 ring-gray-100">
 
-                <!-- 图片区 —— 自适应裁剪 + 悬浮放大 -->
+                <!-- 图片区 —— 悬浮微旋转 + 放大 + 预览按钮 -->
                 <div class="aspect-[4/3] overflow-hidden bg-gray-100 relative">
-                    {% if item.image %}
-                        <img src="{{ item.image.url }}"
-                             alt="{{ item.title }}"
-                             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
-                             loading="lazy">
-                    {% else %}
-                        <div class="w-full h-full flex items-center justify-center text-gray-300 bg-gradient-to-br from-gray-50 to-gray-100">
-                            <svg class="w-12 h-12 sm:w-16 sm:h-16 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                            </svg>
-                        </div>
-                    {% endif %}
+                    {% with first_img=item.images.first %}
+                        {% if first_img %}
+                            <img src="{{ first_img.image.url }}"
+                                 alt="{{ item.title }}"
+                                 class="w-full h-full object-cover group-hover:scale-105 group-hover:rotate-[2deg] transition-all duration-300 ease-in-out lazy-img"
+                                 loading="lazy"
+                                 onload="this.classList.add('loaded')">
+                        {% elif item.image %}
+                            <img src="{{ item.image.url }}"
+                                 alt="{{ item.title }}"
+                                 class="w-full h-full object-cover group-hover:scale-105 group-hover:rotate-[2deg] transition-all duration-300 ease-in-out lazy-img"
+                                 loading="lazy"
+                                 onload="this.classList.add('loaded')">
+                        {% else %}
+                            <div class="w-full h-full flex items-center justify-center text-gray-300 bg-gradient-to-br from-gray-50 to-gray-100">
+                                <svg class="w-12 h-12 sm:w-16 sm:h-16 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+
+                    <!-- 快速预览按钮（悬浮滑入） -->
+                    <div class="absolute inset-x-0 bottom-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out z-10 p-2">
+                        <span class="block w-full py-2 text-xs font-semibold text-center text-white bg-black/60 backdrop-blur-sm rounded-xl hover:bg-black/75 transition-colors">
+                            快速预览
+                        </span>
+                    </div>
+
+                    <!-- 图片数量角标 -->
+                    {% with img_count=item.images.count %}
+                        {% if img_count > 1 %}
+                            <span class="absolute bottom-2 right-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/55 backdrop-blur-sm text-[10px] font-semibold text-white">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                                {{ img_count }}
+                            </span>
+                        {% endif %}
+                    {% endwith %}
 
                     <!-- 状态角标 -->
                     {% if item.status == 0 %}
@@ -161,9 +274,13 @@
 
                 <!-- 信息区 -->
                 <div class="p-3 sm:p-4">
-                    <!-- 标题 -->
+                    <!-- 标题（关键词高亮） -->
                     <h3 class="text-sm sm:text-base font-semibold text-gray-900 line-clamp-2 leading-snug mb-1.5">
-                        {{ item.title }}
+                        {% if keyword %}
+                            {{ item.title|highlight:keyword }}
+                        {% else %}
+                            {{ item.title }}
+                        {% endif %}
                     </h3>
 
                     <!-- 分类标签 -->
@@ -178,34 +295,82 @@
                         <span class="text-base sm:text-lg font-bold text-rose-600">
                             ¥{{ item.price|floatformat:0 }}
                         </span>
-                        <span class="text-[10px] text-gray-400 flex items-center gap-1">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                            </svg>
-                            {{ item.view_count }}
-                        </span>
+                        <div class="flex items-center gap-2">
+                            {% if item.fav_count %}
+                                <span class="text-[10px] text-red-400 flex items-center gap-0.5">
+                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                    </svg>
+                                    {{ item.fav_count }}
+                                </span>
+                            {% endif %}
+                            <span class="text-[10px] text-gray-400 flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                                {{ item.view_count }}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </a>
         {% empty %}
             <!-- 空状态 -->
-            <div class="col-span-full flex flex-col items-center justify-center py-24 text-gray-300">
-                <div class="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-6">
-                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
-                              d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
-                    </svg>
+            {% if keyword or price_min or price_max %}
+                <!-- 搜索/筛选无结果 -->
+                <div class="col-span-full flex flex-col items-center justify-center py-24">
+                    <div class="w-24 h-24 rounded-full bg-amber-50 flex items-center justify-center mb-6">
+                        <svg class="w-12 h-12 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 005.656 0"/>
+                        </svg>
+                    </div>
+                    <p class="text-lg font-medium text-gray-600">没有找到匹配的商品</p>
+                    <p class="text-sm text-gray-400 mt-1.5 max-w-sm text-center">
+                        {% if keyword %}
+                            未找到与 "<strong class="text-gray-600">{{ keyword }}</strong>" 相关的商品
+                        {% endif %}
+                        {% if price_min or price_max %}
+                            {% if keyword %}，{% endif %}价格区间
+                            {% if price_min %}≥ ¥{{ price_min }}{% endif %}
+                            {% if price_min and price_max %}且{% endif %}
+                            {% if price_max %}≤ ¥{{ price_max }}{% endif %}
+                            内暂无商品
+                        {% endif %}
+                    </p>
+                    <div class="flex items-center gap-3 mt-6">
+                        <a href="/goods/"
+                           class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-gray-900 rounded-full hover:bg-gray-800 transition-all duration-300 shadow-md">
+                            浏览全部商品
+                        </a>
+                        {% if keyword %}
+                            <a href="/goods/{% if current_category %}?category={{ current_category }}{% endif %}"
+                               class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-full hover:bg-gray-200 transition-all duration-300">
+                                清除搜索
+                            </a>
+                        {% endif %}
+                    </div>
                 </div>
-                <p class="text-lg font-medium text-gray-400">还没有商品</p>
-                <p class="text-sm text-gray-300 mt-1">成为第一个发布闲置的人吧 🚀</p>
-                {% if user.is_authenticated %}
-                    <a href="/goods/add/"
-                       class="mt-6 inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-emerald-600 rounded-full hover:bg-emerald-700 transition-all duration-300 shadow-md hover:shadow-lg">
-                        发布商品
-                    </a>
-                {% endif %}
-            </div>
+            {% else %}
+                <!-- 平台暂无商品 -->
+                <div class="col-span-full flex flex-col items-center justify-center py-24 text-gray-300">
+                    <div class="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-6">
+                        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                                  d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                        </svg>
+                    </div>
+                    <p class="text-lg font-medium text-gray-400">还没有商品</p>
+                    <p class="text-sm text-gray-300 mt-1">成为第一个发布闲置的人吧 🚀</p>
+                    {% if user.is_authenticated %}
+                        <a href="/goods/add/"
+                           class="mt-6 inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-emerald-600 rounded-full hover:bg-emerald-700 transition-all duration-300 shadow-md hover:shadow-lg">
+                            发布商品
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
         {% endfor %}
     </div>
 </section>

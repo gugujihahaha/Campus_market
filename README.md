@@ -1,10 +1,3 @@
-<!--
-────────────────────────────────────────────────────────────
-  校园二手交易平台 · Campus Market
-  Django 5.2 + Tailwind CSS · 2026
-────────────────────────────────────────────────────────────
--->
-
 <h1 align="center">
   🎓 校园二手交易平台 <br>
   <sub><code>Campus Market</code></sub>
@@ -18,22 +11,26 @@
   <img src="https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white&style=for-the-badge" alt="Python">
   <img src="https://img.shields.io/badge/Django-5.2-092E20?logo=django&logoColor=white&style=for-the-badge" alt="Django">
   <img src="https://img.shields.io/badge/Tailwind_CSS-v3-06B6D4?logo=tailwindcss&logoColor=white&style=for-the-badge" alt="Tailwind CSS">
+  <img src="https://img.shields.io/badge/Alpine.js-3.x-8BC0D0?logo=alpine.js&logoColor=white&style=for-the-badge" alt="Alpine.js">
   <img src="https://img.shields.io/badge/SQLite-3-003B57?logo=sqlite&logoColor=white&style=for-the-badge" alt="SQLite">
-  <img src="https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white&style=for-the-badge" alt="HTML5">
 </p>
 
 ---
 
 ## 📖 项目简介
 
-校园二手交易平台是一个专为高校学生打造的 **C2C 闲置物品交易系统**。学生可以在平台上：
+校园二手交易平台是一个专为高校学生打造的 **C2C 闲置物品交易系统**，覆盖从发布到交易的完整闭环：
 
-- 📸 **发布商品** — 上传照片、填写描述，一键上架闲置
-- 🔍 **浏览 / 搜索** — 逛遍全校好物，按分类、关键词精准筛选
-- 💬 **留言互动** — 在商品下留言，与卖家沟通细节
-- 👤 **个人主页** — 管理自己的商品、查看交易历史
+- 📸 **多图发布** — 拖拽上传 9 张图，拖拽排序，轮播展示
+- 🔍 **搜索筛选** — 关键词高亮、价格区间、多维排序、热门标签
+- ❤️ **收藏关注** — 商品收藏，心形切换，我的收藏管理
+- 🛒 **交易订单** — 下单→确认→交易中→完成，状态时间线追踪
+- 💬 **留言互动** — AJAX 留言/回复/删除，嵌套展示
+- 🔔 **实时通知** — 铃铛角标，订单/留言推送，相对时间
+- 👤 **个人主页** — 资料编辑、头像上传、统计面板
+- 📱 **移动端适配** — 汉堡菜单、底部导航栏、固定操作栏
 
-项目采用 **Django MTV 架构** + **Tailwind CSS** 构建，注重代码健壮性（权限校验、异常处理）与 UI 审美（毛玻璃卡片、微交互动画），设计风格参考闲鱼 App 网页版。
+项目采用 **Django MTV 架构** + **Tailwind CSS** + **Alpine.js** 构建，注重前后端分离 API 设计、权限校验、UI 审美的平衡，设计风格参考闲鱼 App 网页版。
 
 ---
 
@@ -41,56 +38,110 @@
 
 | 层级 | 技术 | 说明 |
 |:---|:---|:---|
-| 🔙 后端框架 | **Django 5.2** | ORM、模板引擎、表单验证、用户认证 |
-| 🎨 前端样式 | **Tailwind CSS (CDN)** | 原子化 CSS，拒绝手写样式表 |
-| 🗄️ 数据库 | **SQLite** | 轻量、零配置；后期可平滑迁移至 MySQL / PostgreSQL |
-| 📝 模板 | **Django Template Language** | 配合 Tailwind 实现组件化页面 |
-| 🧩 图标 | **Emoji + Heroicons** | 轻量图标方案，无需额外字体库 |
+| 🔙 后端框架 | **Django 5.2** | ORM、MTV 模式、用户认证、表单验证、JSON API |
+| 🎨 前端样式 | **Tailwind CSS (CDN)** | 原子化 CSS，自定义动画（toast/fade/skeleton） |
+| ⚡ 前端交互 | **Alpine.js 3.x (CDN)** | 轻量响应式框架：轮播、收藏、通知、Tab 切换 |
+| 🗄️ 数据库 | **SQLite** | 零配置开发；索引优化，可平滑迁移至 MySQL/PostgreSQL |
+| 📝 模板 | **Django Template Language** | 配合 Tailwind 实现组件化页面 + 自定义模板标签 |
+| 🧩 图标 | **SVG Inline** | 轻量图标方案，无需额外字体库 |
 
 ---
 
-## ✨ 功能清单 / Features
+## ✨ 功能清单
 
 ### 🔐 用户系统
 - [x] 注册（用户名 + 密码，注册即自动登录）
-- [x] 登录 / 注销
-- [x] 注册时自动创建 UserProfile（头像、联系方式、宿舍区）
-- [ ] 个人中心（头像上传、资料修改）
-- [ ] 修改密码
+- [x] 登录 / 注销（带 `?next=` 回跳）
+- [x] 注册时自动创建 UserProfile（信号机制）
+- [x] 个人资料编辑（头像、昵称、手机号、微信号、宿舍区、个人简介）
+- [x] 头像上传圆形预览 + 前端即时预览 + 清除功能
+- [x] 导航栏显示 `display_name`（昵称优先）
 
 ### 📦 商品模块
-- [x] 商品发布（标题、价格、描述、图片、分类）
-- [x] 商品列表页（公开浏览）
-- [x] 商品详情页
-- [x] 我的商品管理（仅本人可见，支持下架/重新上架/删除 + 统计面板）
-- [x] 商品状态机：在售 ⇄ 交易中 ⇄ 已售出 / 已下架（支持下架/重新上架操作）
-- [x] 浏览量统计
-- [x] 精美瀑布流首页（毛玻璃导航 + Hero 渐变横幅 + 响应式卡片网格 + 悬浮动画）
-- [x] 鉴权页面美化（Indigo/Emerald 品牌色 + 全屏渐变背景 + 毛玻璃卡片 + 错误提示优化）
-- [x] 用户主页重构（个人信息卡片 + 统计面板 + 商品管理操作区 + 下架/上架/删除）
-- [ ] 多图上传（每个商品 N 张图）
-- [x] 分类筛选（胶囊按钮横向滚动，支持按分类过滤）
-- [x] 关键词搜索（标题/描述模糊匹配，搜索框 + 分类联动保留）
-- [ ] 商品编辑
+- [x] **多图上传**（拖拽/点击选择，最多 9 张，拖拽排序，缩略图预览）
+- [x] 商品发布（标题、价格、描述、分类、多图）
+- [x] 商品列表页（公开浏览，瀑布流卡片网格）
+- [x] **图片轮播**（左右箭头 + 小圆点指示器 + 触屏滑动）
+- [x] 商品详情页（左右分栏 / 移动端上下布局）
+- [x] 我的商品管理（统计面板 5 指标 + 下架/上架/删除）
+- [x] 商品状态机：在售 ⇄ 交易中 → 已售出 / 已下架
+- [x] 浏览量统计（F 表达式防竞态）
+- [x] 分类胶囊筛选（横向滚动 + 选中态黑白高亮）
+- [x] **搜索增强**：排序下拉（5 种）、价格区间筛选、关键词 `<mark>` 高亮、热门搜索标签
+- [x] **空搜索结果友好提示**（引导浏览全部/清除搜索）
 
-### 💬 留言互动
-- [x] Comment 数据模型（用户 ↔ 商品 多对一）
-- [ ] 商品详情页留言区
-- [ ] 留言删除（本人 / 商品主）
+### ❤️ 收藏系统
+- [x] 心形按钮（Alpine.js 无刷新切换，实心红/空心灰，弹跳动画）
+- [x] 收藏计数（商品卡片 + 详情页）
+- [x] 「我的收藏」标签页（商品卡片网格 + 取消收藏）
+- [x] 软删除机制（`is_active` 标记，保留收藏记录）
+
+### 🛒 订单系统
+- [x] 完整订单生命周期：待确认 → 交易中 → 已完成 / 已取消
+- [x] 「我想要」按钮（商品详情页，毛玻璃确认弹窗）
+- [x] 商品状态自动联动：下单→交易中，取消→在售，完成→已售出
+- [x] 「我的订单」页面（我买到的 / 我卖出的 标签切换）
+- [x] 订单卡片：商品信息 + 对方昵称 + 状态标签 + **状态时间线**（横线+圆点）
+- [x] 卖家操作：确认交易 / 拒绝 / 标记完成
+- [x] 联系方式互见（确认后双方可查看对方手机/微信）
+- [x] 取消原因记录 + 状态筛选胶囊
+
+### 💬 留言系统
+- [x] AJAX 留言列表（页面加载渲染，无需刷新）
+- [x] 留言输入框（登录可见，字数 500 限制 + 实时计数）
+- [x] 留言卡片：头像/昵称/时间/内容，楼层分割线
+- [x] **嵌套回复**（`@用户名`，缩进 + 左边框）
+- [x] 删除留言（作者或商品所有者可见，AJAX 无刷新）
+- [x] 前端+后端双重校验
+
+### 🔔 通知系统
+- [x] 导航栏铃铛图标（Alpine.js 下拉面板）
+- [x] 未读红色数字角标（>99 显示 99+）
+- [x] 5 种通知类型：新留言 / 新订单 / 订单确认 / 取消 / 完成
+- [x] 通知列表：类型图标 + 标题/内容/相对时间 + 已读/未读区分（蓝底/白底）
+- [x] 点击跳转对应页面 + 自动标记已读
+- [x] 「全部已读」按钮
+- [x] 30 秒自动轮询未读数
+- [x] 分页加载（每页 20 条）
+
+### 🎨 UI/UX 增强
+- [x] **卡片悬浮增强**：scale(1.05) + 旋转 2° + shadow-2xl + 快速预览按钮滑入
+- [x] **Toast 消息通知**：顶部滑入，3 秒消失，成功绿/失败红/警告黄
+- [x] **回到顶部**：滚动 > 500px 显示，平滑滚动
+- [x] **骨架屏**：收藏列表 shimmer 动画占位
+- [x] **图片模糊懒加载**：blur(10px) → loaded → 清晰（CSS filter transition）
+- [x] **按钮微交互**：`active:scale-[0.97]` 按压反馈
+- [x] 吸顶毛玻璃导航栏（`backdrop-blur-xl`）
+
+### 📱 移动端适配
+- [x] 汉堡菜单 + 展开搜索栏（`<768px`）
+- [x] 底部固定导航栏（首页/发布/订单/我的 + 安全区适配）
+- [x] 详情页底部固定操作栏（价格 + 我想要 + 联系卖家）
+- [x] iOS 防缩放（输入框 16px）
+- [x] 响应式卡片网格（2→3→4→5 列）
+- [x] 详情页左右分栏自动上下布局
+- [x] 轮播图触屏滑动
 
 ### 🛠️ Django Admin 后台
-- [x] @admin.register 装饰器注册全部模型
-- [x] 彩色状态圆角标签（在售=绿、交易中=黄、已售出=灰、已下架=红）
-- [x] 价格红色 ¥ 格式化、头像圆形预览
-- [x] list_filter / search_fields / date_hierarchy 完整配置
-- [ ] 导出 CSV
-- [ ] 数据看板（Dashboard 概览）
+- [x] @admin.register 注册全部模型
+- [x] 彩色状态圆角标签
+- [x] 价格 ¥ 格式化、头像圆形预览
+- [x] list_filter / search_fields / date_hierarchy
 
-### 🧱 数据模型
-- [x] `Category` — 商品分类（图标 + 名称）
-- [x] `Goods` — 商品（标题、价格、描述、图片、状态、浏览量、分类 FK；`increment_view()` 防竞态）
-- [x] `UserProfile` — 用户资料（头像、联系方式、宿舍区；User ↔ UserProfile 信号自动创建）
-- [x] `Comment` — 商品留言
+---
+
+## 🧱 数据模型 (8 个)
+
+| 模型 | 说明 | 关键字段 |
+|:---|:---|:---|
+| `Category` | 商品分类 | name, icon |
+| `Goods` | 商品 | title, price, description, category, user, status, view_count |
+| `GoodsImage` | 商品多图 | goods FK, image, sort_order |
+| `UserProfile` | 用户资料 | user FK, avatar, nickname, phone, wechat, dormitory, bio |
+| `Comment` | 商品留言 | goods FK, user FK, parent FK (self), content |
+| `Favorite` | 商品收藏 | user FK, goods FK, is_active (UniqueConstraint) |
+| `Order` | 交易订单 | buyer, seller, goods, order_no, status, price, cancel_reason |
+| `Notification` | 站内通知 | recipient, sender, type, title, content, link, is_read |
 
 ---
 
@@ -125,7 +176,10 @@ python manage.py migrate
 # 5. 创建超级管理员（用于访问 Admin 后台）
 python manage.py createsuperuser
 
-# 6. 启动开发服务器
+# 6. 导入种子数据（可选）
+python seed_data.py
+
+# 7. 启动开发服务器
 python manage.py runserver
 ```
 
@@ -137,8 +191,45 @@ python manage.py runserver
 | http://localhost:8000/goods/register/ | 用户注册 |
 | http://localhost:8000/goods/login/ | 用户登录 |
 | http://localhost:8000/goods/add/ | 发布商品 |
-| http://localhost:8000/goods/my/ | 我的商品 |
+| http://localhost:8000/goods/my/ | 我的商品/收藏 |
+| http://localhost:8000/goods/orders/ | 我的订单 |
+| http://localhost:8000/goods/profile/edit/ | 编辑资料 |
 | http://localhost:8000/admin/ | Django 管理后台 |
+
+---
+
+## 📡 API 端点一览
+
+### 收藏
+| 方法 | 路由 | 说明 |
+|:---|:---|:---|
+| POST | `/goods/<id>/favorite/` | 切换收藏（JSON 响应） |
+| GET | `/goods/favorites/` | 我的收藏列表（JSON） |
+
+### 订单
+| 方法 | 路由 | 说明 |
+|:---|:---|:---|
+| POST | `/goods/<id>/order/create/` | 创建订单 |
+| POST | `/goods/orders/<id>/confirm/` | 卖家确认 |
+| POST | `/goods/orders/<id>/cancel/` | 取消订单（body: reason） |
+| POST | `/goods/orders/<id>/complete/` | 标记完成 |
+| GET | `/goods/orders/<id>/` | 订单详情 JSON |
+| GET | `/goods/orders/` | 订单列表页 |
+
+### 留言
+| 方法 | 路由 | 说明 |
+|:---|:---|:---|
+| GET | `/goods/<id>/comments/` | 留言列表 JSON |
+| POST | `/goods/<id>/comment/add/` | 添加留言（body: content, parent_id） |
+| POST | `/goods/<id>/comment/delete/<cid>/` | 删除留言 |
+
+### 通知
+| 方法 | 路由 | 说明 |
+|:---|:---|:---|
+| GET | `/goods/notifications/` | 通知列表 JSON（`?page=N`） |
+| GET | `/goods/notifications/unread/` | 未读数 `{unread: N}` |
+| POST | `/goods/notifications/read/<id>/` | 标记已读 |
+| POST | `/goods/notifications/read-all/` | 全部已读 |
 
 ---
 
@@ -146,163 +237,161 @@ python manage.py runserver
 
 ```
 Campus_market/
-├── campus_market/              # Django 项目配置
-│   ├── settings.py             # 全局配置（DEBUG、数据库、静态文件等）
-│   ├── urls.py                 # 根路由
-│   └── wsgi.py                 # WSGI 入口
+├── campus_market/                  # Django 项目配置
+│   ├── settings.py                 # 全局配置 + 媒体文件 + 上传限制
+│   ├── urls.py                     # 根路由
+│   └── wsgi.py                     # WSGI 入口
 │
-├── goods/                      # 商品应用（核心业务）
-│   ├── models.py               # 数据模型：Category, Goods, UserProfile, Comment
-│   ├── admin.py                # 管理后台注册与美化
-│   ├── urls.py                 # 应用路由
-│   ├── apps.py                 # 应用配置
-│   ├── views/                  # 视图层（按模块拆分）
-│   │   ├── goods_views.py      #   商品 CRUD 视图
-│   │   └── user_views.py       #   登录 / 注册视图
-│   ├── services/               # 业务逻辑层
-│   │   └── goods_service.py    #   商品删除等服务
-│   ├── forms/                  # 表单层
-│   │   └── goods_form.py       #   商品表单
-│   └── templates/              # 模板层
-│       ├── base.html           #   基础布局（Tailwind CDN 引入）
-│       ├── goods_list.html     #   商品列表页
-│       ├── goods_detail.html   #   商品详情页
-│       ├── add_goods.html      #   发布商品页
-│       ├── my_goods.html       #   我的商品页
-│       ├── login.html          #   登录页
-│       └── register.html       #   注册页
+├── goods/                          # 商品应用（核心业务）
+│   ├── models.py                   # 8 个数据模型 + 信号
+│   ├── admin.py                    # 管理后台注册与美化
+│   ├── urls.py                     # 25+ 条应用路由
+│   ├── apps.py                     # 应用配置
+│   ├── views/                      # 视图层（按模块拆分）
+│   │   ├── goods_views.py          #   商品 CRUD + 搜索筛选
+│   │   ├── user_views.py           #   登录/注册 + 资料编辑
+│   │   ├── comment_views.py        #   留言 API（树形结构）
+│   │   ├── order_views.py          #   订单 API（完整生命周期）
+│   │   ├── favorite_views.py       #   收藏 API（软删除）
+│   │   └── notification_views.py   #   通知 API（分页+相对时间）
+│   ├── services/                   # 业务逻辑层
+│   │   ├── goods_service.py        #   商品删除（级联文件清理）
+│   │   └── notification_service.py #   通知发送公共函数
+│   ├── forms/                      # 表单层
+│   │   ├── goods_form.py           #   商品表单 + 图片校验
+│   │   └── profile_form.py         #   用户资料表单
+│   ├── templatetags/               # 自定义模板标签
+│   │   └── highlight_tags.py       #   关键词高亮 <mark>
+│   └── templates/                  # 模板层（组件化）
+│       ├── base.html               #   全局布局（Toast/回到顶部/骨架/底部导航）
+│       ├── goods_list.html         #   首页（搜索/排序/筛选/高亮/热门标签）
+│       ├── goods_detail.html       #   详情页（轮播/收藏/留言/下单/移动端操作栏）
+│       ├── add_goods.html          #   发布页（多图拖拽上传/排序）
+│       ├── my_goods.html           #   个人中心（5 指标/商品管理/收藏标签/骨架屏）
+│       ├── my_orders.html          #   订单页（双标签/状态筛选/时间线）
+│       ├── order_card.html         #   订单卡片组件（含状态时间线）
+│       ├── user_profile.html       #   资料编辑页（头像预览/字数统计）
+│       ├── login.html              #   登录页（Indigo 渐变）
+│       └── register.html           #   注册页（Emerald 渐变）
 │
-├── media/                      # 用户上传文件
-│   ├── goods/                  #   商品图片
-│   └── avatars/                #   用户头像
+├── media/                          # 用户上传文件
+│   ├── goods/                      #   商品图片
+│   └── avatars/                    #   用户头像
 │
-├── db.sqlite3                  # SQLite 数据库（开发）
-├── manage.py                   # Django 命令行入口
+├── db.sqlite3                      # SQLite 数据库
+├── seed_data.py                    # 种子数据脚本
+├── manage.py                       # Django CLI 入口
 ├── .gitignore
 └── README.md
 ```
 
 ---
 
-## 📅 更新日志 / Changelog
+## 📐 订单状态流转
 
-### 🗓️ 2026-05-31 — 业务闭环：鉴权页面美化、搜索过滤 & 个人主页重构
+```
+买家创建 → [待确认] ──卖家确认──→ [交易中] ──卖家标记完成──→ [已完成]
+    ↓ 买/卖家取消                  ↓ 买/卖家取消(需原因)      商品→已售出
+  [已取消]                       [已取消]
+  商品→恢复在售                   商品→恢复在售
+```
 
-> **Tag:** `v0.4.0-dashboard`
+---
 
-**鉴权页面 UI 现代化（login.html / register.html）：**
-- ✅ 登录页采用 Indigo 品牌色系，全屏渐变背景 + 4 个装饰性模糊几何图形
-- ✅ 注册页采用 Emerald 品牌色系，同款渐变背景布局
-- ✅ 表单卡片：毛玻璃效果（`backdrop-blur-2xl`）+ `shadow-2xl` + 白色半透明环
-- ✅ 输入框：`focus:ring-2` 品牌色聚焦效果 + 左侧图标
-- ✅ 按钮：渐变色（Indigo/Emerald）+ `active:scale-[0.98]` 按压反馈
-- ✅ 错误提示：红色 Alert 框包含图标 + 标题 + 消息，结构清晰
-- ✅ 底部互跳链接保持品牌色一致
+## 📱 移动端布局断点
 
-**个人主页重构（my_goods.html）：**
-- ✅ 个人信息卡片：渐变色装饰条 + 头像/昵称/宿舍区/联系方式
-- ✅ 四格统计面板：全部 / 在售 / 交易中 / 已售出，彩色背景区分
-- ✅ 发布新商品按钮使用 Indigo→Purple 渐变色
-- ✅ 商品卡片网格：响应式 `grid-cols-2` ~ `xl:grid-cols-5`
-- ✅ 每张卡片：图片 + 状态角标 + 价格 + 浏览量 + 操作按钮组（查看/下架/删除）
-- ✅ 已下架商品显示绿色「重新上架」按钮替代下架
-- ✅ 空状态友好引导文案
+| 断点 | 宽度 | 布局变化 |
+|:---|:---|:---|
+| 默认 | < 480px | 2 列卡片网格 / 详情页上下布局 |
+| `sm` | ≥ 640px | 3 列卡片 |
+| `md` | ≥ 768px | 桌面导航栏恢复 / 底部导航栏隐藏 / 详情页左右分栏 |
+| `lg` | ≥ 1024px | 4 列卡片 |
+| `xl` | ≥ 1280px | 5 列卡片 |
 
-**搜索 & 分类过滤激活：**
-- ✅ 首页新增搜索输入框（搜索图标 + 清除按钮 + 搜索按钮）
-- ✅ `goods_list` 视图 `?q=` 参数对标题/描述进行 `__icontains` 模糊匹配
-- ✅ `?category=` 分类筛选与搜索关键词双向联动（切换分类保留搜索词，反之亦然）
-- ✅ 标题行动态显示当前搜索/筛选上下文
-- ✅ 分类胶囊按钮横向滚动 + 选中态黑白高亮
+---
 
-**后端新增：**
-- ✅ `off_shelf_goods` 视图 — 下架商品（仅本人，状态改为已下架）
-- ✅ `relist_goods` 视图 — 重新上架（仅本人，已下架→在售）
-- ✅ `my_goods` 视图增加统计上下文（on_sale_count / sold_count / in_trade_count / off_shelf_count）
-- ✅ URL 路由注册 off_shelf 和 relist 端点
+## 📅 更新日志
 
-### 🗓️ 2026-05-31 — 商品详情页 & 发布表单 UI 重构
+### 2026-06-11 — 移动端适配 + UI 增强
 
-> **Tag:** `v0.3.0-details`
+- ✅ 移动端汉堡菜单 + 展开搜索栏
+- ✅ 底部固定导航栏（安全区适配 + 当前页高亮）
+- ✅ 商品详情页底部固定操作栏
+- ✅ iOS 防缩放（input/textarea/select 16px）
+- ✅ Toast 消息通知（滑入/自动消失/三色）
+- ✅ 回到顶部按钮（>500px 渐显）
+- ✅ 卡片悬浮增强（scale+rotate+shadow+快速预览）
+- ✅ 骨架屏（shimmer 动画）
+- ✅ 图片模糊懒加载（blur→清晰 transition）
 
-**商品详情页（goods_detail.html）全面重写：**
-- ✅ 左右分栏布局（`grid md:grid-cols-2 gap-8`），左侧大图 + 右侧信息
-- ✅ 图片区：`rounded-3xl` + `shadow-lg` + `aspect-square object-cover`，无图时渐变占位符
-- ✅ 价格：超大号玫瑰红（`text-4xl lg:text-5xl font-extrabold text-rose-600`）
-- ✅ 状态标签带脉冲动画（在售绿点）、浏览量 / 发布时间
-- ✅ 卖家信息卡片：渐变头像、用户名、宿舍区（地图图标）、联系方式
-- ✅ 渐变色「联系卖家」按钮 → 毛玻璃弹窗展示联系方式
-- ✅ 未登录引导登录；本人商品显示「这是你的商品」
-- ✅ 面包屑导航（首页 > 分类 > 商品名）
+### 2026-06-11 — 站内通知系统
 
-**发布表单（add_goods.html）完全重写：**
-- ✅ 居中白色圆角卡片布局（`rounded-3xl shadow-sm`）
-- ✅ 所有输入框 Tailwind 定制：灰色底 + 聚焦 `ring-2 ring-emerald-400`
-- ✅ 图片上传区：虚线边框拖拽视觉（`border-dashed` + 上传图标）
-- ✅ 分类下拉选择器（自定义箭头图标）
-- ✅ 红色错误提示文本（图标 + 消息，逐字段显示）
-- ✅ 渐变色提交按钮「确认发布商品」
+- ✅ Notification 模型（5 种类型）
+- ✅ 铃铛图标 + 未读角标（30s 轮询）
+- ✅ 通知触发：留言/下单/确认/取消/完成
+- ✅ 相对时间显示 + 分页加载
 
-**后端增强：**
-- ✅ `goods_detail` 视图：访问时自动 `increment_view()`（F 表达式防竞态）
-- ✅ `add_goods` 视图：传入 `categories` 供表单下拉使用
-- ✅ `GoodsForm`：新增 `category` 字段、`clean_title`（≥2 字符）、`clean_price`（范围校验）
-- ✅ `get_object_or_404` 替代 `.get()` 避免 500
+### 2026-06-11 — 完整订单系统
 
-### 🗓️ 2026-05-31 — 全局 UI 重塑 & 交互升级
+- ✅ Order 模型（6 字段 + 4 索引 + 唯一订单号）
+- ✅ 状态流转：待确认→交易中→已完成/已取消
+- ✅ 「我想要」按钮 + 毛玻璃确认弹窗
+- ✅ 我的订单页面（双标签 + 状态筛选 + 时间线）
+- ✅ 联系方式互见
 
-> **Tag:** `v0.2.0-ui`
+### 2026-06-11 — 收藏系统
 
-**首页与导航全面升级：**
-- ✅ 导航栏改为吸顶毛玻璃效果（`backdrop-blur-xl` + `backdrop-saturate-150`）
-- ✅ 已登录用户头像下拉菜单（Alpine.js 交互）：我的商品、发布商品、退出登录
-- ✅ 未登录用户精美登录/注册按钮组
-- ✅ Hero Section 渐变色横幅（emerald → teal → cyan），标语「让闲置物品在校园里重新发光」
-- ✅ 横向滚动分类胶囊筛选按钮，选中态黑白高亮
-- ✅ 商品卡片响应式网格 `grid-cols-2` ~ `xl:grid-cols-5`
-- ✅ 卡片悬浮上移 + 阴影加深动画（`hover:-translate-y-1.5 hover:shadow-xl`）
-- ✅ 图片悬浮放大（`hover:scale-110`）、状态角标（在售=绿、交易中=黄、已售出=灰）
-- ✅ 空状态友好引导（引导发布第一条商品）
-- ✅ 新增退出登录功能 + URL 命名路由
+- ✅ Favorite 模型（软删除 + 联合唯一约束）
+- ✅ 心形按钮（Alpine.js 无刷新切换 + 弹跳动画）
+- ✅ 我的收藏标签页 + 卡片网格
 
-**后端更新：**
-- ✅ `goods_list` 视图支持 `?category=` 参数筛选
-- ✅ 首页仅显示在售/交易中商品，已售出/已下架不公开
+### 2026-06-11 — 留言互动
 
-### 🗓️ 2026-05-31 — 项目初始化 & 数据模型重构
+- ✅ Comment parent FK 嵌套回复
+- ✅ AJAX 加载/添加/删除（无刷新）
+- ✅ 回复 @用户名 + 缩进左边框
 
-> **Tag:** `v0.1.0-init`
+### 2026-06-11 — 搜索增强
 
-**数据库模型全面升级：**
-- ✅ 新增 `Category` 模型 — 商品分类（名称 + 图标），支持 `goods_count` 统计
-- ✅ 扩展 `Goods` 模型 — 增加 `status` 状态字段（0 在售 / 1 交易中 / 2 已售出 / 3 已下架）
-- ✅ 增加 `view_count` 浏览量字段，`increment_view()` 使用 `F()` 表达式防止竞态条件
-- ✅ 增加 `category` 外键关联
-- ✅ 新增 `UserProfile` 模型 — User 一对一扩展（头像、联系方式、宿舍区）
-- ✅ 新增 `Comment` 模型 — 商品留言（用户 ↔ 商品）
+- ✅ 排序下拉（5 种：默认/价格升降/最新/最多浏览）
+- ✅ 价格区间筛选
+- ✅ 关键词 `<mark>` 高亮 + 热门搜索标签
+- ✅ 空搜索结果友好引导
 
-**信号机制：**
-- ✅ 使用 `@receiver(post_save, sender=User)` 实现注册时自动创建 UserProfile
+### 2026-06-10 — 多图上传 + 个人资料
 
-**Django Admin 后台美化：**
-- ✅ `@admin.register` 装饰器注册全部模型
-- ✅ 彩色状态圆角标签（Tailwind 风格配色）
-- ✅ 价格红色 ¥ 格式化、头像圆形预览
-- ✅ `list_filter` / `search_fields` / `date_hierarchy` 完整配置
+- ✅ GoodsImage 模型（一对多 + sort_order）
+- ✅ 9 张拖拽上传 + 缩略图排序 + DataTransfer API
+- ✅ 商品详情页轮播图（触屏滑动）
+- ✅ UserProfile 扩展（nickname/phone/wechat/bio）
+- ✅ 个人资料编辑页
 
-**已有功能（来自基础框架）：**
-- ✅ 用户注册 / 登录
-- ✅ 商品发布（含图片上传）
-- ✅ 商品列表页
-- ✅ 商品详情页
-- ✅ 我的商品管理（含删除）
+### 2026-05-31 — 业务闭环 (v0.4.0)
 
-**已完成的后续迭代：**
-- ✅ 首页 UI 重塑（毛玻璃导航 + Hero 横幅 + 分类筛选 + 卡片动画） → 见 v0.2.0-ui
-- ✅ 商品详情页 & 发布表单重构（联系卖家弹窗、虚线拖拽上传） → 见 v0.3.0-details
+- 鉴权页面 UI 现代化
+- 个人主页重构（统计面板 + 商品管理）
+- 搜索 & 分类过滤激活
+
+### 2026-05-31 — 商品详情页 & 发布表单 (v0.3.0)
+
+- 左右分栏详情页
+- 联系卖家毛玻璃弹窗
+- 发布表单 UI 重写
+
+### 2026-05-31 — 全局 UI 重塑 (v0.2.0)
+
+- 吸顶毛玻璃导航
+- Hero 横幅 + 分类胶囊
+- 卡片悬浮动画
+
+### 2026-05-31 — 项目初始化 (v0.1.0)
+
+- 数据模型建立
+- Admin 后台美化
+- 基础 CRUD
 
 ---
 
 <p align="center">
-  <sub>Built with ❤️ using Django & Tailwind CSS · Campus Market © 2026</sub>
+  <sub>Built with ❤️ using Django · Tailwind CSS · Alpine.js · Campus Market © 2026</sub>
 </p>

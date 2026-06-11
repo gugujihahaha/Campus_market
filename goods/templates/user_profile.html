@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+
+{% block title %}编辑资料 - 校园二手{% endblock %}
+
+{% block content %}
+
+<div class="max-w-2xl mx-auto">
+
+    <!-- ==================== 页面标题 ==================== -->
+    <div class="mb-8 text-center">
+        <h1 class="text-2xl lg:text-3xl font-extrabold text-gray-900">编辑个人资料</h1>
+        <p class="mt-2 text-sm text-gray-500">完善信息，让交易更放心 ✨</p>
+    </div>
+
+    <!-- ==================== 表单卡片 ==================== -->
+    <div class="bg-white rounded-3xl shadow-sm ring-1 ring-gray-100 p-6 sm:p-8 lg:p-10">
+
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+
+            <!-- ===== 非字段错误 ===== -->
+            {% if form.non_field_errors %}
+                <div class="mb-6 p-4 rounded-2xl bg-red-50 border border-red-100">
+                    {% for error in form.non_field_errors %}
+                        <p class="text-sm text-red-600 flex items-center gap-2">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            {{ error }}
+                        </p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- ===== 头像 ===== -->
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-gray-700 mb-3">
+                    头像
+                </label>
+                <div class="flex items-center gap-5">
+                    <!-- 当前头像预览（圆形） -->
+                    <div class="flex-shrink-0 relative">
+                        {% if profile.avatar %}
+                            <img src="{{ profile.avatar.url }}"
+                                 alt="当前头像"
+                                 class="w-20 h-20 rounded-full object-cover ring-4 ring-gray-100 shadow-sm">
+                        {% else %}
+                            <div class="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-2xl font-bold ring-4 ring-gray-100 shadow-sm">
+                                {{ user.username|slice:":1"|upper }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- 上传按钮 + 提示 -->
+                    <div class="flex-1">
+                        <label for="{{ form.avatar.id_for_label }}"
+                               class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 cursor-pointer transition-all duration-200 shadow-sm">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            更换头像
+                        </label>
+                        <input type="file"
+                               name="{{ form.avatar.name }}"
+                               id="{{ form.avatar.id_for_label }}"
+                               accept="image/jpeg,image/png,image/webp"
+                               class="hidden"
+                               onchange="previewAvatar(event)">
+                        <p class="mt-1.5 text-xs text-gray-400">JPG / PNG / WebP，≤ 3MB，建议正方形</p>
+                        {% if form.avatar.errors %}
+                            <p class="mt-1 text-xs text-red-500">{{ form.avatar.errors.0 }}</p>
+                        {% endif %}
+                        {% if profile.avatar %}
+                            <label class="mt-1.5 inline-flex items-center gap-1.5 text-xs text-red-400 hover:text-red-600 cursor-pointer transition-colors">
+                                <input type="checkbox" name="avatar-clear" class="w-3 h-3 rounded border-gray-300 text-red-500 focus:ring-red-400">
+                                移除当前头像
+                            </label>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 昵称 ===== -->
+            <div class="mb-5">
+                <label for="{{ form.nickname.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-1.5">
+                    昵称
+                </label>
+                <input type="text"
+                       name="{{ form.nickname.name }}"
+                       id="{{ form.nickname.id_for_label }}"
+                       value="{{ form.nickname.value|default:'' }}"
+                       placeholder="给自己起个名字（默认显示用户名）"
+                       class="w-full px-4 py-3 text-sm text-gray-900 bg-gray-50 border {% if form.nickname.errors %}border-red-300 focus:ring-red-400{% else %}border-gray-200 focus:ring-emerald-400{% endif %} rounded-xl focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 placeholder:text-gray-300">
+                {% if form.nickname.errors %}
+                    <p class="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        {{ form.nickname.errors.0 }}
+                    </p>
+                {% endif %}
+            </div>
+
+            <!-- ===== 手机号 + 微信号（双栏） ===== -->
+            <div class="grid sm:grid-cols-2 gap-4 mb-5">
+                <!-- 手机号 -->
+                <div>
+                    <label for="{{ form.phone.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-1.5">
+                        手机号
+                    </label>
+                    <input type="tel"
+                           name="{{ form.phone.name }}"
+                           id="{{ form.phone.id_for_label }}"
+                           value="{{ form.phone.value|default:'' }}"
+                           placeholder="11位手机号"
+                           maxlength="11"
+                           class="w-full px-4 py-3 text-sm text-gray-900 bg-gray-50 border {% if form.phone.errors %}border-red-300 focus:ring-red-400{% else %}border-gray-200 focus:ring-emerald-400{% endif %} rounded-xl focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 placeholder:text-gray-300">
+                    {% if form.phone.errors %}
+                        <p class="mt-1.5 text-xs text-red-500">{{ form.phone.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <!-- 微信号 -->
+                <div>
+                    <label for="{{ form.wechat.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-1.5">
+                        微信号
+                    </label>
+                    <input type="text"
+                           name="{{ form.wechat.name }}"
+                           id="{{ form.wechat.id_for_label }}"
+                           value="{{ form.wechat.value|default:'' }}"
+                           placeholder="微信号"
+                           class="w-full px-4 py-3 text-sm text-gray-900 bg-gray-50 border {% if form.wechat.errors %}border-red-300 focus:ring-red-400{% else %}border-gray-200 focus:ring-emerald-400{% endif %} rounded-xl focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 placeholder:text-gray-300">
+                    {% if form.wechat.errors %}
+                        <p class="mt-1.5 text-xs text-red-500">{{ form.wechat.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- ===== 宿舍区 ===== -->
+            <div class="mb-5">
+                <label for="{{ form.dormitory.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-1.5">
+                    所在宿舍区
+                </label>
+                <div class="relative">
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    </span>
+                    <input type="text"
+                           name="{{ form.dormitory.name }}"
+                           id="{{ form.dormitory.id_for_label }}"
+                           value="{{ form.dormitory.value|default:'' }}"
+                           placeholder="例如：南区3栋 / 北区5号楼"
+                           class="w-full pl-10 pr-4 py-3 text-sm text-gray-900 bg-gray-50 border {% if form.dormitory.errors %}border-red-300 focus:ring-red-400{% else %}border-gray-200 focus:ring-emerald-400{% endif %} rounded-xl focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 placeholder:text-gray-300">
+                </div>
+                {% if form.dormitory.errors %}
+                    <p class="mt-1.5 text-xs text-red-500">{{ form.dormitory.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- ===== 个人简介 ===== -->
+            <div class="mb-6">
+                <label for="{{ form.bio.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-1.5">
+                    个人简介
+                </label>
+                <textarea name="{{ form.bio.name }}"
+                          id="{{ form.bio.id_for_label }}"
+                          rows="3"
+                          maxlength="200"
+                          placeholder="简单介绍一下自己，让交易更放心……"
+                          class="w-full px-4 py-3 text-sm text-gray-900 bg-gray-50 border {% if form.bio.errors %}border-red-300 focus:ring-red-400{% else %}border-gray-200 focus:ring-emerald-400{% endif %} rounded-xl focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 placeholder:text-gray-300 resize-none">{{ form.bio.value|default:'' }}</textarea>
+                <p class="mt-1 text-xs text-gray-400 text-right">
+                    <span id="bio-count">{% if form.bio.value %}{{ form.bio.value|length }}{% else %}0{% endif %}</span> / 200
+                </p>
+                {% if form.bio.errors %}
+                    <p class="mt-1.5 text-xs text-red-500">{{ form.bio.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- ===== 提交按钮 ===== -->
+            <div class="flex items-center gap-3">
+                <button type="submit"
+                        class="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold text-white bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl hover:from-gray-800 hover:to-gray-700 hover:shadow-lg hover:shadow-gray-900/20 transition-all duration-300 shadow-md">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    保存资料
+                </button>
+                <a href="/goods/my/"
+                   class="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-2xl hover:bg-gray-200 transition-all duration-200">
+                    取消
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 头像预览
+    function previewAvatar(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // 格式和大小前端校验
+        const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!allowed.includes(file.type)) {
+            alert('头像仅支持 JPG / PNG / WebP 格式');
+            event.target.value = '';
+            return;
+        }
+        if (file.size > 3 * 1024 * 1024) {
+            alert('头像文件不能超过 3MB');
+            event.target.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // 找到预览区的 img 或首字母圆形容器
+            const previewContainer = document.querySelector('.w-20.h-20');
+            if (!previewContainer) return;
+
+            // 替换为预览图片
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.alt = '头像预览';
+            img.className = 'w-20 h-20 rounded-full object-cover ring-4 ring-emerald-200 shadow-sm';
+            previewContainer.replaceWith(img);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // 个人简介字数统计
+    const bioTextarea = document.getElementById('{{ form.bio.id_for_label }}');
+    const bioCount = document.getElementById('bio-count');
+    if (bioTextarea && bioCount) {
+        bioTextarea.addEventListener('input', function() {
+            bioCount.textContent = this.value.length;
+            if (this.value.length > 190) {
+                bioCount.classList.add('text-amber-500');
+            } else {
+                bioCount.classList.remove('text-amber-500');
+            }
+        });
+    }
+</script>
+{% endblock %}
