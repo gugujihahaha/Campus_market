@@ -50,9 +50,9 @@
 ## ✨ 功能清单
 
 ### 🔐 用户系统
-- [x] 注册（用户名 + 密码，注册即自动登录）
-- [x] 登录 / 注销（带 `?next=` 回跳）
-- [x] 注册时自动创建 UserProfile（信号机制）
+- [x] 注册（用户名 + 密码，注册即自动登录，前端+后端双重校验）
+- [x] 登录 / 注销（带 `?next=` 回跳，输入非空校验）
+- [x] 注册时自动创建 UserProfile（信号机制 `get_or_create` 防竞态）
 - [x] 个人资料编辑（头像、昵称、手机号、微信号、宿舍区、个人简介）
 - [x] 头像上传圆形预览 + 前端即时预览 + 清除功能
 - [x] 导航栏显示 `display_name`（昵称优先）
@@ -187,6 +187,7 @@ python manage.py runserver
 
 | 地址 | 说明 |
 |:---|:---|
+| http://localhost:8000/ | 根路径，自动跳转到首页 |
 | http://localhost:8000/goods/ | 商品列表（首页） |
 | http://localhost:8000/goods/register/ | 用户注册 |
 | http://localhost:8000/goods/login/ | 用户登录 |
@@ -195,6 +196,8 @@ python manage.py runserver
 | http://localhost:8000/goods/orders/ | 我的订单 |
 | http://localhost:8000/goods/profile/edit/ | 编辑资料 |
 | http://localhost:8000/admin/ | Django 管理后台 |
+
+> 💡 也支持不带 `/goods/` 前缀的便捷短链接：`/register/`、`/login/`、`/logout/`、`/add/` 均会自动重定向到对应页面。
 
 ---
 
@@ -311,6 +314,17 @@ Campus_market/
 ---
 
 ## 📅 更新日志
+
+### 2026-06-11 — 路由修复 + 注册登录加固
+
+- ✅ 根路径 `/` 自动重定向到 `/goods/`（避免首页 404）
+- ✅ 便捷短链接：`/register/`、`/login/`、`/logout/`、`/add/` 自动跳转
+- ✅ 配置 `LOGIN_URL` / `LOGIN_REDIRECT_URL` / `LOGOUT_REDIRECT_URL`（修复 `@login_required` 跳转到不存在的 `/accounts/login/` 问题）
+- ✅ 修复 `ALLOWED_HOSTS` 为空的问题
+- ✅ 注册视图加固：用户名非空/3-20字符/仅允许字母数字下划线连字符，密码非空/≥6字符，捕获创建异常
+- ✅ 登录视图加固：用户名和密码非空校验
+- ✅ UserProfile 信号改用 `get_or_create` 防竞态，确保所有用户自动拥有资料
+- ✅ 所有已存在用户补全 UserProfile 数据
 
 ### 2026-06-11 — 移动端适配 + UI 增强
 
