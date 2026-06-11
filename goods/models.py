@@ -410,4 +410,4 @@ class Notification(models.Model):
 def create_user_profile(sender, instance, created, **kwargs):
     """新建 User 时自动创建对应的 UserProfile"""
     if created:
-        UserProfile.objects.create(user=instance)
+        UserProfile.objects.get_or_create(user=instance)

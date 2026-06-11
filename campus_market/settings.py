@@ -26,7 +26,7 @@ SECRET_KEY = "django-insecure-7km++#koh$hv+09pl+v(8*r&llalrkrlz&k*(#k2+7cszt0)cj
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -126,6 +126,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # 配置媒体文件
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# 登录相关配置
+LOGIN_URL = '/goods/login/'
+LOGIN_REDIRECT_URL = '/goods/'
+LOGOUT_REDIRECT_URL = '/goods/'
 
 # 文件上传限制（多图上传：最多9张 × 5MB = 45MB，设为50MB余量）
 DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
