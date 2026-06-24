@@ -10,7 +10,7 @@ class UserProfileForm(forms.ModelForm):
 
     class Meta:
         model = UserProfile
-        fields = ['avatar', 'nickname', 'phone', 'wechat', 'dormitory', 'bio']
+        fields = ['avatar', 'nickname', 'email', 'phone', 'wechat', 'dormitory', 'bio']
         widgets = {
             'bio': forms.Textarea(attrs={'rows': 3}),
         }
@@ -38,3 +38,9 @@ class UserProfileForm(forms.ModelForm):
         if len(bio) > 200:
             raise forms.ValidationError("个人简介不能超过200字")
         return bio
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '').strip()
+        if email and not forms.EmailField().clean(email):
+            raise forms.ValidationError("请输入有效的邮箱地址")
+        return email

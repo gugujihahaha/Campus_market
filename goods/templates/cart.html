@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block title %}购物车 - 校园二手{% endblock %}
+
+{% block content %}
+
+<div class="max-w-3xl mx-auto">
+
+    <div class="mb-8 text-center">
+        <h1 class="text-2xl lg:text-3xl font-extrabold text-gray-900">我的购物车</h1>
+        <p class="mt-2 text-sm text-gray-500">共 <span class="font-semibold text-gray-700">{{ cart_count }}</span> 件商品</p>
+    </div>
+
+    {% if items %}
+    <div class="bg-white rounded-3xl shadow-sm ring-1 ring-gray-100 overflow-hidden">
+        <!-- 商品列表 -->
+        <div class="divide-y divide-gray-50">
+            {% for item in items %}
+            <div class="flex gap-4 p-5 hover:bg-gray-50/50 transition-colors" id="cart-item-{{ item.id }}">
+                <!-- 商品图片 -->
+                <a href="/goods/detail/{{ item.goods.id }}/" class="flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden bg-gray-100">
+                    {% with img=item.goods.first_image %}
+                        {% if img %}
+                            <img src="{{ img.url }}" class="w-full h-full object-cover">
+                        {% else %}
+                            <div class="w-full h-full flex items-center justify-center text-gray-300">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                </a>
+
+                <!-- 商品信息 -->
+                <div class="flex-1 min-w-0">
+                    <a href="/goods/detail/{{ item.goods.id }}/" class="text-sm font-semibold text-gray-900 hover:text-gray-600 line-clamp-1">
+                        {{ item.goods.title }}
+                    </a>
+                    <p class="text-xs text-gray-400 mt-0.5">卖家：{{ item.goods.user.profile.display_name }}</p>
+                    <div class="flex items-center justify-between mt-2">
+                        <span class="text-lg font-bold text-rose-600">¥{{ item.goods.price|floatformat:0 }}</span>
+                        <button onclick="removeFromCart({{ item.id }})"
+                                class="px-3 py-1.5 text-xs font-medium text-red-400 bg-red-50 rounded-lg hover:bg-red-100 hover:text-red-500 transition-colors">
+                            移除
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- 底部汇总 -->
+        <div class="border-t border-gray-100 bg-gray-50/50 p-5">
+            <div class="flex items-center justify-between mb-4">
+                <span class="text-sm text-gray-500">合计</span>
+                <span class="text-2xl font-extrabold text-rose-600">¥{{ total_price|floatformat:0 }}</span>
+            </div>
+            <button onclick="checkout()" id="checkoutBtn"
+                    class="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold text-white bg-gradient-to-r from-rose-500 to-pink-600 rounded-2xl hover:from-rose-600 hover:to-pink-700 hover:shadow-lg transition-all shadow-md">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/>
+                </svg>
+                一键下单全部商品
+            </button>
+            <p class="mt-3 text-xs text-gray-400 text-center">下单后，各商品卖家将分别收到通知</p>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- 空购物车 -->
+    <div class="text-center py-24">
+        <div class="w-24 h-24 mx-auto rounded-full bg-gray-100 flex items-center justify-center mb-6">
+            <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/>
+            </svg>
+        </div>
+        <p class="text-lg font-medium text-gray-400">购物车是空的</p>
+        <p class="text-sm text-gray-300 mt-1">去逛逛，把喜欢的商品加入购物车</p>
+        <a href="/goods/" class="mt-6 inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-gray-900 rounded-full hover:bg-gray-800 transition-all shadow-md">
+            去逛逛
+        </a>
+    </div>
+    {% endif %}
+
+    {% if invalid_items %}
+    <div class="mt-6 bg-white rounded-3xl shadow-sm ring-1 ring-gray-100 p-5">
+        <h3 class="text-sm font-semibold text-gray-500 mb-3">已失效的商品</h3>
+        <div class="space-y-2">
+            {% for item in invalid_items %}
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                <span class="text-sm text-gray-400 line-through">{{ item.goods.title }}</span>
+                <span class="text-xs text-gray-400">已{{ item.goods.status_label }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function removeFromCart(itemId) {
+        try {
+            const res = await fetch(`/goods/cart/remove/${itemId}/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCSRF() },
+            });
+            const data = await res.json();
+            if (data.success) {
+                location.reload();
+            }
+        } catch(e) { alert('操作失败'); }
+    }
+
+    async function checkout() {
+        if (!confirm('确定要对购物车中所有商品一键下单吗？')) return;
+        const btn = document.getElementById('checkoutBtn');
+        btn.disabled = true;
+        btn.textContent = '处理中...';
+        try {
+            const res = await fetch('/goods/cart/checkout/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCSRF() },
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert(`成功创建 ${data.count} 个订单！\n${data.orders.join('\n')}`);
+                location.reload();
+            } else {
+                alert(data.error || '下单失败');
+            }
+        } catch(e) { alert('网络错误'); }
+        btn.disabled = false;
+        btn.textContent = '一键下单全部商品';
+    }
+
+    function getCSRF() {
+        const c = document.cookie.split('; ').find(r => r.startsWith('csrftoken='));
+        return c ? c.split('=')[1] : '';
+    }
+</script>
+{% endblock %}

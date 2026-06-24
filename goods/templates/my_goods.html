@@ -215,10 +215,18 @@
                     </div>
 
                     <!-- 操作按钮组 -->
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <!-- 编辑按钮 -->
+                        <a href="/goods/edit/{{ item.id }}/"
+                           class="flex-1 inline-flex items-center justify-center gap-1 px-2 py-2 text-[11px] font-medium text-indigo-600 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                            编辑
+                        </a>
                         <!-- 查看按钮 -->
                         <a href="/goods/detail/{{ item.id }}/"
-                           class="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 text-[11px] font-medium text-gray-600 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                           class="flex-1 inline-flex items-center justify-center gap-1 px-2 py-2 text-[11px] font-medium text-gray-600 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
@@ -268,7 +276,7 @@
                     </svg>
                 </div>
                 <p class="text-lg font-medium text-gray-400">还没有发布任何商品</p>
-                <p class="text-sm text-gray-300 mt-1">发布你的第一个闲置物品吧 🚀</p>
+                <p class="text-sm text-gray-300 mt-1">发布你的第一个闲置物品吧</p>
                 <a href="/goods/add/"
                    class="mt-6 inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-gray-900 rounded-full hover:bg-gray-800 transition-all duration-300 shadow-md hover:shadow-lg">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -320,7 +328,7 @@
                             </svg>
                         </div>
                         <p class="text-lg font-medium text-gray-400">还没有收藏任何商品</p>
-                        <p class="text-sm text-gray-300 mt-1">去逛逛，收藏喜欢的商品吧 ❤️</p>
+                        <p class="text-sm text-gray-300 mt-1">去逛逛，收藏喜欢的商品吧</p>
                         <a href="/goods/" class="mt-6 inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-full hover:bg-indigo-700 transition-all shadow-md">去逛逛</a>
                     </div>`;
                 return;

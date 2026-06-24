@@ -1,10 +1,12 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login, logout
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from goods.forms.profile_form import UserProfileForm
-from goods.models import UserProfile
+from goods.forms.password_reset_form import PasswordResetRequestForm, PasswordResetForm
+from goods.forms.campus_form import CampusVerifyForm
+from goods.models import UserProfile, PasswordResetToken
 
 
 # 登录功能
@@ -111,6 +113,97 @@ def profile_edit(request):
         form = UserProfileForm(instance=profile)
 
     return render(request, 'user_profile.html', {
+        'form': form,
+        'profile': profile,
+    })
+
+
+# ==================== 找回密码 ====================
+
+def password_reset_request(request):
+    """忘记密码 —— 输入用户名和邮箱，发送重置链接"""
+    if request.user.is_authenticated:
+        return redirect('/goods/')
+
+    if request.method == 'POST':
+        form = PasswordResetRequestForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data['username']
+            user = User.objects.get(username=username)
+            # 生成重置令牌
+            reset_token = PasswordResetToken.generate(user)
+            # 在开发环境中直接显示令牌链接
+            reset_link = request.build_absolute_uri(
+                f'/goods/password-reset/{reset_token.token}/'
+            )
+            messages.success(
+                request,
+                f"重置链接已生成（开发模式）：{reset_link}"
+            )
+            return render(request, 'password_reset_done.html', {
+                'reset_link': reset_link,
+                'username': username,
+            })
+    else:
+        form = PasswordResetRequestForm()
+
+    return render(request, 'password_reset_request.html', {'form': form})
+
+
+def password_reset_confirm(request, token):
+    """验证令牌并重置密码"""
+    if request.user.is_authenticated:
+        return redirect('/goods/')
+
+    reset_token = get_object_or_404(PasswordResetToken, token=token)
+
+    if not reset_token.is_valid:
+        messages.error(request, "此重置链接已失效或已使用，请重新申请")
+        return redirect('/goods/password-reset/')
+
+    if request.method == 'POST':
+        form = PasswordResetForm(request.POST)
+        if form.is_valid():
+            user = reset_token.user
+            user.set_password(form.cleaned_data['password'])
+            user.save()
+            # 标记令牌已使用
+            reset_token.is_used = True
+            reset_token.save()
+            messages.success(request, "密码重置成功！请使用新密码登录")
+            return redirect('/goods/login/')
+    else:
+        form = PasswordResetForm()
+
+    return render(request, 'password_reset_confirm.html', {
+        'form': form,
+        'token': token,
+    })
+
+
+# ==================== 校园认证 ====================
+
+@login_required
+def campus_verify(request):
+    """校园身份认证申请"""
+    profile = request.user.profile
+
+    if profile.is_verified:
+        messages.info(request, "你已经通过校园认证")
+        return redirect('/goods/my/')
+
+    if request.method == 'POST':
+        form = CampusVerifyForm(request.POST, instance=profile)
+        if form.is_valid():
+            profile = form.save(commit=False)
+            profile.verification_status = 'pending'
+            profile.save()
+            messages.success(request, "认证申请已提交，请等待管理员审核")
+            return redirect('/goods/my/')
+    else:
+        form = CampusVerifyForm(instance=profile)
+
+    return render(request, 'campus_verify.html', {
         'form': form,
         'profile': profile,
     })

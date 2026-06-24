@@ -3,8 +3,8 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
-from django.db import models
-from goods.models import Goods, Order
+from django.db import models, IntegrityError
+from goods.models import Goods, Order, Review
 from goods.services.notification_service import send_notification
 
 
@@ -231,4 +231,96 @@ def order_detail(request, order_id):
                 "image_url": order.goods.first_image.url if order.goods.first_image else None,
             },
         },
+    })
+
+
+# ==================== 订单评价 ====================
+
+@login_required
+@require_POST
+def review_create(request, order_id):
+    """创建订单评价"""
+    order = get_object_or_404(Order, id=order_id)
+
+    # 只有订单参与者可以评价
+    if request.user not in [order.buyer, order.seller]:
+        return JsonResponse({"success": False, "error": "无权操作"}, status=403)
+
+    # 只有已完成订单可以评价
+    if order.status != Order.Status.COMPLETED:
+        return JsonResponse({"success": False, "error": "只能评价已完成的订单"}, status=400)
+
+    # 确定被评价人
+    reviewee = order.seller if request.user == order.buyer else order.buyer
+
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"success": False, "error": "请求数据格式错误"}, status=400)
+
+    rating = data.get("rating", 0)
+    comment = data.get("comment", "").strip()
+
+    if not 1 <= rating <= 5:
+        return JsonResponse({"success": False, "error": "请选择1-5星评分"}, status=400)
+    if len(comment) > 500:
+        return JsonResponse({"success": False, "error": "评价内容不能超过500字"}, status=400)
+
+    try:
+        review = Review.objects.create(
+            order=order,
+            reviewer=request.user,
+            reviewee=reviewee,
+            rating=rating,
+            comment=comment,
+        )
+
+        # 通知被评价人
+        send_notification(
+            recipient=reviewee,
+            type_="system",
+            title="收到新评价",
+            content=f"{request.user.profile.display_name} 给了你 {rating} 星评价" + (f"：{comment[:50]}" if comment else ""),
+            link=f"/goods/my/",
+            sender=request.user,
+        )
+
+        return JsonResponse({
+            "success": True,
+            "review": {
+                "id": review.id,
+                "rating": review.rating,
+                "comment": review.comment,
+                "created_at": review.created_at.strftime("%Y-%m-%d %H:%M"),
+            },
+        })
+    except IntegrityError:
+        return JsonResponse({"success": False, "error": "你已经评价过了"}, status=400)
+
+
+@login_required
+def user_reviews(request, user_id):
+    """查看用户收到的评价列表"""
+    from django.contrib.auth.models import User
+    target_user = get_object_or_404(User, id=user_id)
+    reviews = target_user.received_reviews.select_related(
+        "reviewer", "reviewer__profile", "order", "order__goods"
+    ).order_by("-created_at")
+
+    return JsonResponse({
+        "success": True,
+        "avg_rating": target_user.profile.avg_rating,
+        "count": reviews.count(),
+        "reviews": [
+            {
+                "id": r.id,
+                "reviewer": r.reviewer.profile.display_name,
+                "reviewer_avatar": r.reviewer.profile.avatar.url if r.reviewer.profile.avatar else None,
+                "rating": r.rating,
+                "comment": r.comment,
+                "goods_title": r.order.goods.title,
+                "created_at": r.created_at.strftime("%Y-%m-%d %H:%M"),
+            }
+            for r in reviews[:20]
+        ],
     })

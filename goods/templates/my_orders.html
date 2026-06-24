@@ -131,15 +131,43 @@
                 const u = data.order.other_user;
                 const lines = [];
                 lines.push(`<p class="font-semibold text-gray-900">${u.display_name} (@${u.username})</p>`);
-                if (u.dormitory) lines.push(`<p class="text-gray-600">📍 ${u.dormitory}</p>`);
-                if (u.phone) lines.push(`<p class="text-gray-600">📱 ${u.phone}</p>`);
-                if (u.wechat) lines.push(`<p class="text-gray-600">💬 微信：${u.wechat}</p>`);
+                if (u.dormitory) lines.push(`<p class="text-gray-600">宿舍：${u.dormitory}</p>`);
+                if (u.phone) lines.push(`<p class="text-gray-600">手机：${u.phone}</p>`);
+                if (u.wechat) lines.push(`<p class="text-gray-600">微信：${u.wechat}</p>`);
                 if (!u.phone && !u.wechat) lines.push('<p class="text-gray-400">对方暂未填写联系方式</p>');
                 document.getElementById('orderContactContent').innerHTML = lines.join('');
                 document.getElementById('orderContactModal').classList.remove('hidden');
             }
         } catch(e) { alert('获取联系方式失败'); }
     }
+    // --- 评价组件 ---
+    function reviewSection(orderId) {
+        return {
+            rating: 5,
+            comment: '',
+            showForm: false,
+            submitted: false,
+            async submit() {
+                if (this.rating < 1 || this.rating > 5) { alert('请选择评分'); return; }
+                try {
+                    const res = await fetch(`/goods/orders/${orderId}/review/`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRF() },
+                        body: JSON.stringify({ rating: this.rating, comment: this.comment }),
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        alert('评价成功！');
+                        this.submitted = true;
+                        this.showForm = false;
+                    } else {
+                        alert(data.error || '评价失败');
+                    }
+                } catch(e) { alert('网络错误'); }
+            },
+        };
+    }
+
     function getCSRF() {
         const c = document.cookie.split('; ').find(r => r.startsWith('csrftoken='));
         return c ? c.split('=')[1] : '';

@@ -2,27 +2,28 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db import models
 from django.contrib import messages
+from django.core.paginator import Paginator, EmptyPage
+import random
 from goods.forms.goods_form import GoodsForm, validate_images
 from goods.services.goods_service import delete_goods as delete_goods_service
-from goods.models import Goods, Category, GoodsImage, Favorite
+from goods.models import Goods, Category, GoodsImage, Favorite, Announcement
 
 
 def goods_list(request):
-    """商品列表页 —— 支持搜索关键词 + 分类筛选 + 排序 + 价格区间"""
+    """商品列表页 —— 搜索 + 分类 + 排序 + 价格 + 翻页"""
     category_id = request.GET.get("category", "")
     keyword = request.GET.get("q", "").strip()
     sort = request.GET.get("sort", "default")
     price_min = request.GET.get("price_min", "").strip()
     price_max = request.GET.get("price_max", "").strip()
+    page = request.GET.get("page", "1")
 
     categories = Category.objects.all()
 
-    # 基础查询：仅展示在售 / 交易中，预加载多图 + 收藏计数
     goods = Goods.objects.filter(status__in=[0, 1]).prefetch_related("images").annotate(
         fav_count=models.Count("favorites", filter=models.Q(favorites__is_active=True))
     )
 
-    # 分类筛选
     if category_id and category_id.isdigit():
         goods = goods.filter(category_id=int(category_id))
         current_category = category_id
@@ -32,13 +33,11 @@ def goods_list(request):
         current_category = ""
         current_category_name = ""
 
-    # 关键词搜索（标题或描述模糊匹配）
     if keyword:
         goods = goods.filter(
             models.Q(title__icontains=keyword) | models.Q(description__icontains=keyword)
         )
 
-    # 价格区间筛选
     if price_min:
         try:
             goods = goods.filter(price__gte=float(price_min))
@@ -50,7 +49,6 @@ def goods_list(request):
         except ValueError:
             pass
 
-    # 排序
     sort_map = {
         "default": "-created_at",
         "price_asc": "price",
@@ -58,32 +56,28 @@ def goods_list(request):
         "newest": "-created_at",
         "most_viewed": "-view_count",
     }
-    order_by = sort_map.get(sort, "-created_at")
-    goods = goods.order_by(order_by)
+    goods = goods.order_by(sort_map.get(sort, "-created_at"))
 
-    # 生成排序标签
-    sort_labels = {
-        "default": "默认排序",
-        "price_asc": "价格从低到高",
-        "price_desc": "价格从高到低",
-        "newest": "最新发布",
-        "most_viewed": "最多浏览",
-    }
+    # 翻页
+    paginator = Paginator(goods, 12)
+    try:
+        page_obj = paginator.page(int(page))
+    except (ValueError, EmptyPage):
+        page_obj = paginator.page(1)
 
-    # 热门搜索标签
-    hot_tags = ["教材", "手机", "耳机", "自行车", "台灯", "考研", "iPad", "相机"]
+    announcements = Announcement.objects.filter(is_active=True).order_by("-created_at")[:3]
 
     context = {
-        "goods": goods,
+        "goods": page_obj,
+        "page_obj": page_obj,
         "categories": categories,
         "current_category": current_category,
         "current_category_name": current_category_name,
         "keyword": keyword,
         "sort": sort,
-        "sort_labels": sort_labels,
         "price_min": price_min,
         "price_max": price_max,
-        "hot_tags": hot_tags,
+        "announcements": announcements,
     }
     return render(request, "goods_list.html", context)
 
@@ -101,13 +95,59 @@ def goods_detail(request, id):
             user=request.user, goods=goods, is_active=True
         ).exists()
 
+    # 商品推荐：同分类推荐 + 随机热门
+    recommended = _get_recommendations(goods, request.user)
+
+    # 卖家评价
+    seller_reviews = goods.user.received_reviews.select_related(
+        "reviewer", "order"
+    ).order_by("-created_at")[:5]
+    seller_avg_rating = goods.user.profile.avg_rating
+    seller_review_count = goods.user.profile.review_count
+
+    # 卖家其他在售商品
+    seller_other = Goods.objects.filter(
+        user=goods.user, status__in=[0, 1]
+    ).exclude(id=goods.id).prefetch_related("images").order_by("-created_at")[:6]
+
     return render(request, 'goods_detail.html', {
         'goods': goods,
         'images': images,
         'images_count': len(images),
         'is_favorited': is_favorited,
         'favorite_count': goods.favorite_count,
+        'recommended': recommended,
+        'seller_reviews': seller_reviews,
+        'seller_avg_rating': seller_avg_rating,
+        'seller_review_count': seller_review_count,
+        'seller_other': seller_other,
     })
+
+
+def _get_recommendations(goods, user):
+    """生成推荐商品列表"""
+    recommended = []
+    # 1. 同分类商品
+    if goods.category:
+        same_cat = Goods.objects.filter(
+            category=goods.category,
+            status__in=[0, 1],
+        ).exclude(id=goods.id).prefetch_related("images").order_by("-view_count")[:4]
+        recommended.extend(same_cat)
+
+    # 2. 随机热门补充
+    remaining = 6 - len(recommended)
+    if remaining > 0:
+        hot = Goods.objects.filter(
+            status__in=[0, 1],
+        ).exclude(id=goods.id).exclude(
+            id__in=[g.id for g in recommended]
+        ).prefetch_related("images").order_by("-view_count")[:remaining * 3]
+        hot_list = list(hot)
+        random.shuffle(hot_list)
+        recommended.extend(hot_list[:remaining])
+
+    return recommended[:6]
 
 
 # "发布商品"视图
@@ -201,3 +241,50 @@ def relist_goods(request, id):
         goods.status = Goods.Status.ON_SALE
         goods.save(update_fields=["status"])
     return redirect('/goods/my/')
+
+
+# 编辑商品视图
+@login_required
+def edit_goods(request, id):
+    goods = get_object_or_404(Goods, id=id, user=request.user)
+
+    if request.method == 'POST':
+        form = GoodsForm(request.POST, instance=goods)
+        image_files = request.FILES.getlist('images')
+        image_errors = validate_images(image_files)
+
+        # 处理图片删除
+        delete_image_ids = request.POST.getlist('delete_images')
+        if delete_image_ids:
+            for img_id in delete_image_ids:
+                GoodsImage.objects.filter(id=img_id, goods=goods).delete()
+
+        if form.is_valid() and not image_errors:
+            goods = form.save()
+
+            # 追加新图片
+            for idx, img_file in enumerate(image_files):
+                GoodsImage.objects.create(
+                    goods=goods,
+                    image=img_file,
+                    sort_order=goods.images.count() + idx,
+                )
+
+            messages.success(request, "商品信息已更新！")
+            return redirect('/goods/my/')
+        else:
+            for err in image_errors:
+                messages.error(request, err)
+    else:
+        form = GoodsForm(instance=goods)
+
+    categories = Category.objects.all()
+    existing_images = goods.images.all()
+
+    return render(request, 'edit_goods.html', {
+        'form': form,
+        'goods': goods,
+        'categories': categories,
+        'existing_images': existing_images,
+        'existing_count': existing_images.count(),
+    })

@@ -11,7 +11,7 @@ class Category(models.Model):
     name = models.CharField(max_length=50, unique=True, verbose_name="分类名称")
     icon = models.CharField(
         max_length=20,
-        default="📦",
+        default="其他",
         verbose_name="图标",
         help_text="可使用 Emoji 表情或图标类名",
     )
@@ -175,6 +175,40 @@ class UserProfile(models.Model):
         verbose_name="个人简介",
         help_text="简单介绍一下自己，让交易更放心（200字以内）",
     )
+    # 邮箱字段（用于找回密码）
+    email = models.EmailField(
+        max_length=100,
+        blank=True,
+        verbose_name="邮箱",
+        help_text="用于找回密码和接收重要通知",
+    )
+    # 校园认证字段
+    student_id = models.CharField(
+        max_length=30,
+        blank=True,
+        verbose_name="学号",
+    )
+    school_name = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="学校名称",
+    )
+    is_verified = models.BooleanField(
+        default=False,
+        verbose_name="校园认证",
+        help_text="是否通过校园身份认证",
+    )
+    verification_status = models.CharField(
+        max_length=20,
+        choices=[
+            ("unverified", "未认证"),
+            ("pending", "审核中"),
+            ("verified", "已认证"),
+            ("rejected", "已拒绝"),
+        ],
+        default="unverified",
+        verbose_name="认证状态",
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
 
     class Meta:
@@ -188,6 +222,19 @@ class UserProfile(models.Model):
     def display_name(self):
         """返回昵称或用户名"""
         return self.nickname or self.user.username
+
+    @property
+    def avg_rating(self):
+        """计算平均评分"""
+        reviews = self.user.received_reviews.all()
+        if not reviews:
+            return 0
+        return round(sum(r.rating for r in reviews) / len(reviews), 1)
+
+    @property
+    def review_count(self):
+        """评价总数"""
+        return self.user.received_reviews.count()
 
 
 # ==================== Comment 商品留言 ====================
@@ -402,6 +449,154 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"[{self.get_type_display()}] {self.title[:30]}"
+
+
+# ==================== Review 订单评价 ====================
+
+class Review(models.Model):
+    """订单评价模型 —— 交易完成后双方互评"""
+    order = models.ForeignKey(
+        "Order",
+        on_delete=models.CASCADE,
+        related_name="reviews",
+        verbose_name="关联订单",
+    )
+    reviewer = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="given_reviews",
+        verbose_name="评价人",
+    )
+    reviewee = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="received_reviews",
+        verbose_name="被评价人",
+    )
+    rating = models.PositiveSmallIntegerField(
+        choices=[(i, f"{i}星") for i in range(1, 6)],
+        verbose_name="评分",
+    )
+    comment = models.TextField(
+        max_length=500,
+        blank=True,
+        verbose_name="评价内容",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="评价时间")
+
+    class Meta:
+        verbose_name = "订单评价"
+        verbose_name_plural = "订单评价"
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["order", "reviewer", "reviewee"],
+                name="unique_order_review",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.reviewer.username} → {self.reviewee.username}: {self.rating}星"
+
+
+# ==================== CartItem 购物车 ====================
+
+class CartItem(models.Model):
+    """购物车模型"""
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="cart_items",
+        verbose_name="用户",
+        db_index=True,
+    )
+    goods = models.ForeignKey(
+        Goods,
+        on_delete=models.CASCADE,
+        related_name="cart_items",
+        verbose_name="商品",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="加入时间")
+
+    class Meta:
+        verbose_name = "购物车"
+        verbose_name_plural = "购物车"
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "goods"],
+                name="unique_user_goods_cart",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} → {self.goods.title}"
+
+
+# ==================== Announcement 公告 ====================
+
+class Announcement(models.Model):
+    """平台公告模型"""
+    title = models.CharField(max_length=200, verbose_name="标题")
+    content = models.TextField(verbose_name="内容")
+    is_active = models.BooleanField(default=True, verbose_name="发布中")
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name="发布者",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="发布时间")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间")
+
+    class Meta:
+        verbose_name = "公告"
+        verbose_name_plural = "公告"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.title[:50]
+
+
+# ==================== PasswordResetToken 密码重置令牌 ====================
+
+import secrets
+from datetime import timedelta
+from django.utils import timezone
+
+
+class PasswordResetToken(models.Model):
+    """密码重置令牌模型"""
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="reset_tokens",
+        verbose_name="用户",
+    )
+    token = models.CharField(max_length=64, unique=True, verbose_name="令牌")
+    expires_at = models.DateTimeField(verbose_name="过期时间")
+    is_used = models.BooleanField(default=False, verbose_name="已使用")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+
+    class Meta:
+        verbose_name = "密码重置令牌"
+        verbose_name_plural = "密码重置令牌"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.user.username} 的重置令牌"
+
+    @classmethod
+    def generate(cls, user):
+        """为用户生成一个新的重置令牌，有效期24小时"""
+        token = secrets.token_urlsafe(48)
+        expires_at = timezone.now() + timedelta(hours=24)
+        return cls.objects.create(user=user, token=token, expires_at=expires_at)
+
+    @property
+    def is_valid(self):
+        """令牌是否有效（未使用且未过期）"""
+        return not self.is_used and self.expires_at > timezone.now()
 
 
 # ==================== 信号：自动创建 UserProfile ====================
